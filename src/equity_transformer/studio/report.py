@@ -26,6 +26,12 @@ def build_studio_report(
     walk_forward_metrics_path: str | Path = (
         "artifacts/studio/walk_forward/factor_top10/metrics.json"
     ),
+    robustness_summary_path: str | Path = (
+        "artifacts/studio/robustness/factor_top10/scenario_summary.csv"
+    ),
+    robustness_aggregate_path: str | Path = (
+        "artifacts/studio/robustness/factor_top10/aggregate.json"
+    ),
 ) -> str:
     registry = StrategyRunRegistry(runs_root)
     runs = registry.summary()
@@ -34,6 +40,8 @@ def build_studio_report(
     recommendations = pd.read_csv(recommendations_path)
     walk_forward_folds = _optional_csv(walk_forward_folds_path)
     walk_forward_metrics = _optional_json(walk_forward_metrics_path)
+    robustness_summary = _optional_csv(robustness_summary_path)
+    robustness_aggregate = _optional_json(robustness_aggregate_path)
     lines = [
         "# QuantLab Strategy Studio Results",
         "",
@@ -81,6 +89,7 @@ def build_studio_report(
         ),
         "",
         *_walk_forward_section(walk_forward_folds, walk_forward_metrics),
+        *_robustness_section(robustness_summary, robustness_aggregate),
         "## Interpretation Boundaries",
         "",
         "- The live data window is short and uses a present-day static universe.",
@@ -162,3 +171,33 @@ def _optional_json(path: str | Path) -> dict[str, float] | None:
     if not source.exists():
         return None
     return json.loads(source.read_text(encoding="utf-8"))
+
+
+def _robustness_section(
+    scenarios: pd.DataFrame | None,
+    aggregate: dict[str, float] | None,
+) -> list[str]:
+    if scenarios is None or aggregate is None:
+        return []
+    return [
+        "## Unified OOS Robustness",
+        "",
+        f"- Scenarios: {int(aggregate['scenario_count'])}",
+        f"- Pass rate: {aggregate['pass_rate']:.2%}",
+        f"- Worst Sharpe: {aggregate['worst_sharpe']:.4f}",
+        f"- Worst maximum drawdown: {aggregate['worst_max_drawdown']:.4f}",
+        "",
+        _markdown_table(
+            scenarios,
+            [
+                "scenario",
+                "oos_observations",
+                "sharpe_ratio",
+                "max_drawdown",
+                "fold_sharpe_min",
+                "positive_fold_rate",
+                "passes_constraints",
+            ],
+        ),
+        "",
+    ]

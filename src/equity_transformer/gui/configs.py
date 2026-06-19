@@ -123,6 +123,11 @@ CONFIG_CATALOG: dict[str, ConfigEntry] = {
         Path("configs/studio_walk_forward.yaml"),
         "策略 Walk-forward 與滾動樣本外評估。",
     ),
+    "studio_robustness": ConfigEntry(
+        "studio_robustness",
+        Path("configs/studio_robustness.yaml"),
+        "成本、延遲、Top-K 與再平衡頻率的 OOS 穩健性評估。",
+    ),
 }
 
 

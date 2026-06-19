@@ -75,6 +75,30 @@ def test_build_studio_report_from_registered_artifacts(tmp_path: Path) -> None:
         ),
         encoding="utf-8",
     )
+    robustness_summary = tmp_path / "robustness.csv"
+    pd.DataFrame(
+        {
+            "scenario": ["double_costs"],
+            "oos_observations": [20],
+            "sharpe_ratio": [0.8],
+            "max_drawdown": [-0.05],
+            "fold_sharpe_min": [-0.1],
+            "positive_fold_rate": [0.5],
+            "passes_constraints": [True],
+        }
+    ).to_csv(robustness_summary, index=False)
+    robustness_aggregate = tmp_path / "robustness.json"
+    robustness_aggregate.write_text(
+        json.dumps(
+            {
+                "scenario_count": 1,
+                "pass_rate": 1.0,
+                "worst_sharpe": 0.8,
+                "worst_max_drawdown": -0.05,
+            }
+        ),
+        encoding="utf-8",
+    )
 
     report = build_studio_report(
         tmp_path / "report.md",
@@ -84,6 +108,8 @@ def test_build_studio_report_from_registered_artifacts(tmp_path: Path) -> None:
         recommendations_path=recommendations,
         walk_forward_folds_path=walk_forward_folds,
         walk_forward_metrics_path=walk_forward_metrics,
+        robustness_summary_path=robustness_summary,
+        robustness_aggregate_path=robustness_aggregate,
     )
 
     assert "Registered strategy runs: 1" in report
@@ -91,3 +117,4 @@ def test_build_studio_report_from_registered_artifacts(tmp_path: Path) -> None:
     assert "balanced profile" in report
     assert "Frozen-Strategy Walk-Forward OOS" in report
     assert "Folds: 1" in report
+    assert "Unified OOS Robustness" in report

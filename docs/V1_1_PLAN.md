@@ -8,8 +8,8 @@ research and reproducibility contracts established in V1.
 | 1 | Chinese no-code strategy wizard with advanced YAML fallback | Complete |
 | 2 | Strategy duplicate, version history, diff, archive, and delete flows | Complete |
 | 3 | Frozen-strategy walk-forward and rolling OOS orchestration | Complete |
-| 4 | Cost, lag, liquidity, and nearby-parameter robustness report | Next |
-| 5 | Chinese investor-needs questionnaire and constraint translation | Planned |
+| 4 | Cost, lag, and nearby-parameter OOS robustness report | Complete |
+| 5 | Chinese investor-needs questionnaire and constraint translation | Next |
 | 6 | Interactive multi-objective comparison and recommendation rationale | Planned |
 | 7 | Corporate-action-adjusted data and historical-universe adapters | Planned |
 
@@ -37,6 +37,6 @@ research and reproducibility contracts established in V1.
 
 ## Delivery Order
 
-The next implementation slice is the unified robustness report. Profile
-recommendations should then consume OOS and robustness gates before ranking
+The next implementation slice is the Chinese investor-needs questionnaire.
+Profile recommendations will consume OOS and robustness gates before ranking
 candidates.

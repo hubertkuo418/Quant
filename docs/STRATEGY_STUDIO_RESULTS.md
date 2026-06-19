@@ -41,6 +41,22 @@
 | 11.0000 | 2025-10-08 | 2026-03-31 | 2026-04-09 | 2026-05-06 | 0.1315 | 9.3795 | -0.0100 |
 | 12.0000 | 2025-11-05 | 2026-04-29 | 2026-05-07 | 2026-06-04 | 0.0254 | 2.7320 | -0.0149 |
 
+## Unified OOS Robustness
+
+- Scenarios: 6
+- Pass rate: 100.00%
+- Worst Sharpe: 3.3492
+- Worst maximum drawdown: -0.0453
+
+| scenario | oos_observations | sharpe_ratio | max_drawdown | fold_sharpe_min | positive_fold_rate | passes_constraints |
+| --- | --- | --- | --- | --- | --- | --- |
+| baseline | 60.0000 | 4.1824 | -0.0436 | 0.1031 | 1.0000 | True |
+| double_costs | 60.0000 | 3.9412 | -0.0453 | -0.1752 | 0.6667 | True |
+| lag_plus_one | 60.0000 | 3.9809 | -0.0387 | -0.1839 | 0.6667 | True |
+| top_k_minus_two | 60.0000 | 4.3360 | -0.0362 | 1.1980 | 1.0000 | True |
+| top_k_plus_two | 60.0000 | 4.1862 | -0.0405 | 0.7252 | 1.0000 | True |
+| monthly_rebalance | 60.0000 | 3.3492 | -0.0137 | 0.3925 | 1.0000 | True |
+
 ## Interpretation Boundaries
 
 - The live data window is short and uses a present-day static universe.

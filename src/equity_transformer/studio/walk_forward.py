@@ -115,8 +115,16 @@ class WalkForwardEvaluator:
             ].copy()
             if curve.empty:
                 raise ValueError(f"Fold {fold.fold} produced no OOS equity rows.")
-            curve["fold"] = fold.fold
+            in_fold = dates.to_series().between(fold.test_start, fold.test_end)
+            fold_dates = dates[in_fold]
+            curve = self._align_fold_calendar(curve, fold_dates, fold.fold)
             oos_curves.append(curve)
+            fold_equity = self._stitch([curve], spec.execution.initial_capital)
+            fold_metrics = performance_metrics(
+                fold_equity,
+                spec.annualization_factor,
+                spec.risk_free_rate,
+            )
             fold_rows.append(
                 {
                     "fold": fold.fold,
@@ -125,7 +133,7 @@ class WalkForwardEvaluator:
                     "test_start": fold.test_start,
                     "test_end": fold.test_end,
                     "run_id": result.run_id,
-                    **result.metrics,
+                    **fold_metrics,
                 }
             )
 
@@ -190,6 +198,18 @@ class WalkForwardEvaluator:
         initial["nav"] = initial_capital
         initial["fold"] = 0
         return pd.concat([pd.DataFrame([initial]), stitched], ignore_index=True)
+
+    @staticmethod
+    def _align_fold_calendar(
+        curve: pd.DataFrame,
+        dates: pd.DatetimeIndex,
+        fold: int,
+    ) -> pd.DataFrame:
+        aligned = curve.set_index("date").reindex(dates).rename_axis("date")
+        numeric_columns = aligned.select_dtypes(include="number").columns
+        aligned[numeric_columns] = aligned[numeric_columns].fillna(0.0)
+        aligned["fold"] = fold
+        return aligned.reset_index()
 
 
 def build_walk_forward_folds(

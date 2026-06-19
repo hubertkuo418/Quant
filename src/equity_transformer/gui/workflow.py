@@ -63,6 +63,16 @@ WORKFLOW_STEPS: dict[str, WorkflowStep] = {
         ),
         description="以 purge gap 和互不重疊測試窗執行滾動樣本外評估。",
     ),
+    "studio_robustness": WorkflowStep(
+        name="studio_robustness",
+        label="建立 OOS 穩健性報告",
+        command=(
+            "scripts/run_studio_robustness.py",
+            "--config",
+            "configs/studio_robustness.yaml",
+        ),
+        description="統一評估成本、延遲、Top-K 與月度再平衡情境。",
+    ),
     "csv_import": WorkflowStep(
         name="csv_import",
         label="匯入市場 CSV",

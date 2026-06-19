@@ -79,6 +79,11 @@ the normal Strategy Studio runner and displays the stitched OOS equity curve.
 The current mode evaluates a frozen strategy; it does not retrain a model or
 reselect factors inside every fold.
 
+The unified robustness panel reruns the same OOS calendar under baseline,
+double-cost, extra-lag, nearby Top-K, and monthly-rebalance scenarios. It shows
+aggregate and worst-fold Sharpe, positive-fold rate, drawdown, and whether each
+scenario passes configured constraints.
+
 The Strategy tab can apply a selected factor from
 `artifacts/factors/selected_factors.json` to `configs/strategy.yaml` as the
 strategy `score_column`.

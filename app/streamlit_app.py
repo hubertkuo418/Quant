@@ -1,5 +1,7 @@
 from __future__ import annotations
 
+import json
+from dataclasses import replace
 from pathlib import Path
 
 import pandas as pd
@@ -50,6 +52,10 @@ from equity_transformer.studio.recommendation import (
     save_recommendations,
 )
 from equity_transformer.studio.registry import StrategyRunRegistry
+from equity_transformer.studio.robustness import (
+    RobustnessEvaluator,
+    load_robustness_config,
+)
 from equity_transformer.studio.runner import StrategyStudioRunner
 from equity_transformer.studio.specs import (
     load_strategy_spec,
@@ -100,6 +106,8 @@ DISPLAY_LABELS = {
     "execution_robustness": "執行穩健性",
     "field": "設定欄位",
     "fold": "Fold",
+    "fold_sharpe_min": "Fold 最差夏普比率",
+    "fold_sharpe_std": "Fold 夏普標準差",
     "family": "因子類別",
     "factor": "因子",
     "factor_score": "因子分數",
@@ -129,10 +137,12 @@ DISPLAY_LABELS = {
     "net_return": "成本後報酬",
     "observations": "觀測數",
     "parameters": "參數",
+    "passes_constraints": "通過限制",
     "pareto_efficient": "Pareto 有效率",
     "periods": "期數",
     "portfolio": "投資組合",
     "positive_ic_rate": "正 IC 比率",
+    "positive_fold_rate": "正夏普 Fold 比率",
     "prediction": "預測值",
     "profit_factor": "獲利因子",
     "profile": "需求設定",
@@ -733,7 +743,7 @@ with tabs[7]:
                     "inverse_volatility",
                     "risk_parity",
                 ]
-                rebalance_options = ["D", "W-FRI", "ME"]
+                rebalance_options = ["D", "W-FRI", "M"]
                 portfolio_left, portfolio_middle, portfolio_right = st.columns(3)
                 strategy_type = portfolio_left.selectbox(
                     "組合類型",
@@ -766,7 +776,7 @@ with tabs[7]:
                     format_func=lambda value: {
                         "D": "每日",
                         "W-FRI": "每週五",
-                        "ME": "每月底",
+                        "M": "每月底",
                     }[value],
                 )
                 portfolio_size, long_side, short_side = st.columns(3)
@@ -1187,6 +1197,56 @@ with tabs[7]:
                 )
     else:
         st.info("請先建立或還原一個啟用中的策略。")
+
+    st.subheader("統一 OOS 穩健性報告")
+    st.caption(
+        "比較基準、雙倍成本、延遲增加、Top-K 鄰近值與月度再平衡，"
+        "所有情境使用相同 OOS 日期。"
+    )
+    if strategy_paths and selected_strategy.exists():
+        robustness_output = Path("artifacts/studio/robustness") / current_spec.slug
+        if st.button("執行六情境 OOS 穩健性評估", use_container_width=True):
+            try:
+                robustness_config = replace(
+                    load_robustness_config("configs/studio_robustness.yaml"),
+                    strategy_spec_path=selected_strategy,
+                    output_dir=robustness_output,
+                )
+                robustness_result = RobustnessEvaluator(robustness_config).run()
+            except Exception as exc:
+                st.error(f"穩健性評估失敗：{exc}")
+            else:
+                st.success(
+                    f"已完成 {len(robustness_result.scenarios)} 個 OOS 情境。"
+                )
+                st.dataframe(
+                    display_table(robustness_result.scenarios),
+                    hide_index=True,
+                )
+                st.json(robustness_result.aggregate)
+        robustness_summary_path = robustness_output / "scenario_summary.csv"
+        robustness_aggregate_path = robustness_output / "aggregate.json"
+        if robustness_summary_path.exists():
+            latest_robustness = pd.read_csv(robustness_summary_path)
+            st.dataframe(display_table(latest_robustness), hide_index=True)
+            st.plotly_chart(
+                px.bar(
+                    latest_robustness,
+                    x="scenario",
+                    y="sharpe_ratio",
+                    color="passes_constraints",
+                    title="各穩健性情境 OOS 夏普比率",
+                    labels={
+                        "scenario": "情境",
+                        "sharpe_ratio": "夏普比率",
+                        "passes_constraints": "通過限制",
+                    },
+                )
+            )
+        if robustness_aggregate_path.exists():
+            st.json(
+                json.loads(robustness_aggregate_path.read_text(encoding="utf-8"))
+            )
 
     registry = StrategyRunRegistry()
     run_summary = registry.summary()
