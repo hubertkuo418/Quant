@@ -15,108 +15,108 @@ class ConfigEntry:
 
 
 CONFIG_CATALOG: dict[str, ConfigEntry] = {
-    "data": ConfigEntry("data", Path("configs/data.yaml"), "Market data pipeline."),
+    "data": ConfigEntry("data", Path("configs/data.yaml"), "市場資料管線。"),
     "csv_import": ConfigEntry(
         "csv_import",
         Path("configs/csv_import.yaml"),
-        "Local CSV market data import.",
+        "匯入本地市場資料 CSV。",
     ),
     "data_quality": ConfigEntry(
         "data_quality",
         Path("configs/data_quality.yaml"),
-        "Market panel quality diagnostics.",
+        "市場資料面板品質診斷。",
     ),
     "features": ConfigEntry(
-        "features", Path("configs/features.yaml"), "Point-in-time features."
+        "features", Path("configs/features.yaml"), "符合時點原則的特徵。"
     ),
     "alphas": ConfigEntry(
-        "alphas", Path("configs/alphas.yaml"), "Formulaic alpha calculation."
+        "alphas", Path("configs/alphas.yaml"), "公式化 Alpha 計算。"
     ),
     "factor_panel": ConfigEntry(
-        "factor_panel", Path("configs/factor_panel.yaml"), "Feature/alpha merge."
+        "factor_panel", Path("configs/factor_panel.yaml"), "合併特徵與 Alpha。"
     ),
     "catalog": ConfigEntry(
-        "catalog", Path("configs/catalog.yaml"), "DuckDB research catalog."
+        "catalog", Path("configs/catalog.yaml"), "DuckDB 研究資料目錄。"
     ),
     "factors": ConfigEntry(
-        "factors", Path("configs/factors.yaml"), "Factor validation."
+        "factors", Path("configs/factors.yaml"), "因子驗證。"
     ),
     "factor_selection": ConfigEntry(
         "factor_selection",
         Path("configs/factor_selection.yaml"),
-        "Validated factor selection.",
+        "篩選通過驗證的因子。",
     ),
     "factor_signals": ConfigEntry(
         "factor_signals",
         Path("configs/factor_signals.yaml"),
-        "IC-weighted factor signal generation.",
+        "產生 IC 加權因子訊號。",
     ),
     "strategy": ConfigEntry(
-        "strategy", Path("configs/strategy.yaml"), "Signal-to-weight rules."
+        "strategy", Path("configs/strategy.yaml"), "訊號轉換為權重的規則。"
     ),
     "model_strategy": ConfigEntry(
         "model_strategy",
         Path("configs/model_strategy.yaml"),
-        "Model signal-to-weight rules.",
+        "模型訊號轉換為權重的規則。",
     ),
     "backtest": ConfigEntry(
-        "backtest", Path("configs/backtest.yaml"), "Backtest assumptions."
+        "backtest", Path("configs/backtest.yaml"), "回測假設。"
     ),
     "model_backtest": ConfigEntry(
         "model_backtest",
         Path("configs/model_backtest.yaml"),
-        "Model portfolio backtest assumptions.",
+        "模型投資組合回測假設。",
     ),
     "benchmarks": ConfigEntry(
-        "benchmarks", Path("configs/benchmarks.yaml"), "Benchmark backtests."
+        "benchmarks", Path("configs/benchmarks.yaml"), "基準策略回測。"
     ),
     "regime": ConfigEntry(
-        "regime", Path("configs/regime.yaml"), "Market regime analysis."
+        "regime", Path("configs/regime.yaml"), "市場狀態分析。"
     ),
     "sensitivity": ConfigEntry(
         "sensitivity",
         Path("configs/sensitivity.yaml"),
-        "Backtest sensitivity scenarios.",
+        "回測敏感度情境。",
     ),
     "attribution": ConfigEntry(
         "attribution",
         Path("configs/attribution.yaml"),
-        "Portfolio return attribution.",
+        "投資組合報酬歸因。",
     ),
     "equity_comparison": ConfigEntry(
         "equity_comparison",
         Path("configs/equity_comparison.yaml"),
-        "Common-period portfolio comparison.",
+        "共同期間投資組合比較。",
     ),
     "dataset": ConfigEntry(
-        "dataset", Path("configs/dataset.yaml"), "ML dataset construction."
+        "dataset", Path("configs/dataset.yaml"), "建立機器學習資料集。"
     ),
     "baselines": ConfigEntry(
-        "baselines", Path("configs/baselines.yaml"), "Baseline model experiments."
+        "baselines", Path("configs/baselines.yaml"), "基準模型實驗。"
     ),
     "recurrent": ConfigEntry(
-        "recurrent", Path("configs/recurrent.yaml"), "RNN/LSTM/GRU training."
+        "recurrent", Path("configs/recurrent.yaml"), "RNN/LSTM/GRU 訓練。"
     ),
     "transformer": ConfigEntry(
-        "transformer", Path("configs/transformer.yaml"), "Transformer training."
+        "transformer", Path("configs/transformer.yaml"), "Transformer 訓練。"
     ),
     "prediction_signals": ConfigEntry(
         "prediction_signals",
         Path("configs/prediction_signals.yaml"),
-        "Model prediction-to-signal conversion.",
+        "將模型預測轉換為策略訊號。",
     ),
     "reporting": ConfigEntry(
-        "reporting", Path("configs/reporting.yaml"), "Report aggregation."
+        "reporting", Path("configs/reporting.yaml"), "彙整成果報告。"
     ),
     "studio_optimizer": ConfigEntry(
         "studio_optimizer",
         Path("configs/studio_optimizer.yaml"),
-        "Strategy Studio parameter search and constraints.",
+        "策略工作室參數搜尋與限制條件。",
     ),
     "studio_profile": ConfigEntry(
         "studio_profile",
         Path("configs/studio_profile.yaml"),
-        "Personal risk, return, drawdown, and turnover preferences.",
+        "個人風險、報酬、回撤與換手率偏好。",
     ),
 }
 

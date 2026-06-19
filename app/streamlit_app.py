@@ -44,142 +44,287 @@ from equity_transformer.studio.specs import (
     strategy_spec_from_dict,
 )
 
-st.set_page_config(page_title="QuantLab Strategy Studio", layout="wide")
-st.title("QuantLab Strategy Studio")
-st.caption("Design, backtest, compare, optimize, and version quant strategies.")
+DISPLAY_LABELS = {
+    "absolute_contribution": "絕對貢獻",
+    "active_positions": "持倉數量",
+    "adj_close": "調整收盤價",
+    "annual_alpha": "年化 Alpha",
+    "annual_borrow_rate": "年化借券費率",
+    "annual_return": "年化報酬率",
+    "annual_volatility": "年化波動率",
+    "average_abs_trade_value": "平均絕對交易金額",
+    "average_active_positions": "平均持倉數量",
+    "average_gross_exposure": "平均總曝險",
+    "average_net_exposure": "平均淨曝險",
+    "average_turnover": "平均換手率",
+    "benchmark": "基準",
+    "benchmark_return": "基準報酬",
+    "beta": "Beta",
+    "borrow_cost": "借券成本",
+    "cagr": "年複合成長率",
+    "calmar_ratio": "Calmar 比率",
+    "cash_interest": "現金利息",
+    "commission_bps": "手續費（基點）",
+    "common_end": "共同結束日",
+    "common_start": "共同起始日",
+    "conditional_value_at_risk_95": "條件風險值（95%）",
+    "contribution_rank": "貢獻排名",
+    "cost": "成本",
+    "coverage": "覆蓋率",
+    "created_utc": "建立時間（UTC）",
+    "date": "日期",
+    "days_held": "持有天數",
+    "delta_weight": "權重變動",
+    "duration_seconds": "執行秒數",
+    "ending_nav": "期末淨值",
+    "end_date": "結束日期",
+    "evaluation_basis": "評估基礎",
+    "execution_lag_days": "執行延遲天數",
+    "execution_robustness": "執行穩健性",
+    "family": "因子類別",
+    "factor": "因子",
+    "factor_score": "因子分數",
+    "feasible": "符合限制",
+    "financing_return": "融資報酬",
+    "from_weight": "原權重",
+    "gross_exposure": "總曝險",
+    "gross_return": "成本前報酬",
+    "horizon": "預測週期",
+    "ic_std": "IC 標準差",
+    "icir": "ICIR",
+    "information_ratio": "資訊比率",
+    "lag_sharpe_std": "延遲夏普標準差",
+    "long_exposure": "多頭曝險",
+    "max_drawdown": "最大回撤",
+    "max_gross_exposure": "最大總曝險",
+    "mean_count": "平均樣本數",
+    "mean_forward_return": "平均未來報酬",
+    "mean_ic": "平均 IC",
+    "mean_observations": "平均觀測數",
+    "mean_rank_ic": "平均 Rank IC",
+    "metric": "指標",
+    "model": "模型",
+    "nav": "淨值",
+    "net_exposure": "淨曝險",
+    "net_return": "成本後報酬",
+    "observations": "觀測數",
+    "parameters": "參數",
+    "pareto_efficient": "Pareto 有效率",
+    "periods": "期數",
+    "portfolio": "投資組合",
+    "positive_ic_rate": "正 IC 比率",
+    "prediction": "預測值",
+    "profit_factor": "獲利因子",
+    "profile": "需求設定",
+    "quantile": "分位數",
+    "rank_ic_std": "Rank IC 標準差",
+    "rank_icir": "Rank ICIR",
+    "rationale": "推薦理由",
+    "recommendation_rank": "推薦排名",
+    "recommendation_score": "推薦分數",
+    "returncode": "返回碼",
+    "run_id": "執行編號",
+    "scenario": "情境",
+    "score": "分數",
+    "selection_score": "選擇分數",
+    "share_of_absolute_contribution": "絕對貢獻占比",
+    "sharpe_ratio": "夏普比率",
+    "short_exposure": "空頭曝險",
+    "side": "方向",
+    "slippage_bps": "滑價（基點）",
+    "sortino_ratio": "Sortino 比率",
+    "source": "來源",
+    "spec_hash": "規格雜湊",
+    "split": "資料切分",
+    "start_date": "起始日期",
+    "started_utc": "開始時間（UTC）",
+    "step": "步驟",
+    "strategy": "策略",
+    "strategy_family": "策略類別",
+    "success": "成功",
+    "target": "實際值",
+    "ticker": "股票代號",
+    "to_weight": "目標權重",
+    "total_abs_trade_value": "絕對交易總額",
+    "total_borrow_cost": "借券總成本",
+    "total_cash_interest": "現金利息總額",
+    "total_contribution": "總貢獻",
+    "total_cost": "總成本",
+    "total_return": "總報酬率",
+    "total_trade_cost": "交易總成本",
+    "tracking_error": "追蹤誤差",
+    "trade_count": "交易筆數",
+    "trade_value": "交易金額",
+    "trial": "試驗編號",
+    "turnover": "換手率",
+    "value": "數值",
+    "value_at_risk_95": "風險值（95%）",
+    "version": "版本",
+    "volatility_20d": "20 日波動率",
+    "weight": "權重",
+    "win_rate": "勝率",
+    "worst_case_sharpe": "最差情境夏普比率",
+}
+
+
+def display_label(value: str) -> str:
+    if value.startswith("raw_"):
+        return f"原始{display_label(value.removeprefix('raw_'))}"
+    return DISPLAY_LABELS.get(value, value.replace("_", " ").title())
+
+
+def display_table(frame: pd.DataFrame) -> pd.DataFrame:
+    columns = {column: display_label(str(column)) for column in frame}
+    return frame.rename(columns=columns)
+
+
+st.set_page_config(page_title="QuantLab 量化策略工作室", layout="wide")
+st.title("QuantLab 量化策略工作室")
+st.caption("自由設計、回測、比較、優化並版本化管理量化策略。")
 
 artifacts = load_dashboard_artifacts()
 
 tabs = st.tabs(
     [
-        "Dashboard",
-        "Factor Explorer",
-        "Strategy",
-        "Model Lab",
-        "Backtest",
-        "Workflow",
-        "Configs",
-        "Strategy Studio",
+        "總覽儀表板",
+        "因子探索",
+        "策略組合",
+        "模型實驗室",
+        "回測分析",
+        "工作流程",
+        "設定管理",
+        "策略工作室",
     ]
 )
 
 with tabs[0]:
     quality_summary = artifacts["data_quality_summary"]
     if quality_summary:
-        st.subheader("Market Data Quality")
+        st.subheader("市場資料品質")
         quality_columns = st.columns(4)
-        quality_columns[0].metric("Rows", f"{quality_summary.get('rows', 0):,}")
-        quality_columns[1].metric("Tickers", quality_summary.get("tickers", 0))
+        quality_columns[0].metric("資料列數", f"{quality_summary.get('rows', 0):,}")
+        quality_columns[1].metric("股票數量", quality_summary.get("tickers", 0))
         quality_columns[2].metric(
-            "Calendar Dates", quality_summary.get("calendar_dates", 0)
+            "交易日期數", quality_summary.get("calendar_dates", 0)
         )
         quality_columns[3].metric(
-            "Issues", quality_summary.get("issue_count", 0)
+            "問題數量", quality_summary.get("issue_count", 0)
         )
         quality_issues = artifacts["data_quality_issues"]
         if isinstance(quality_issues, pd.DataFrame) and not quality_issues.empty:
-            st.dataframe(quality_issues, hide_index=True)
+            st.dataframe(display_table(quality_issues), hide_index=True)
 
-    st.subheader("Performance Overview")
+    st.subheader("績效總覽")
     metrics = artifacts["backtest_metrics"]
     if metrics:
         overview = available_metrics(metrics, OVERVIEW_METRICS)
         if overview:
             columns = st.columns(len(overview))
             for column, (key, value) in zip(columns, overview, strict=True):
-                column.metric(key.replace("_", " ").title(), f"{value:.4f}")
+                column.metric(display_label(key), f"{value:.4f}")
 
         risk_table = metric_table(metrics, TAIL_RISK_METRICS)
         if not risk_table.empty:
-            st.subheader("Tail Risk")
-            st.dataframe(risk_table, hide_index=True)
+            st.subheader("尾端風險")
+            st.dataframe(display_table(risk_table), hide_index=True)
 
         relative_table = metric_table(metrics, RELATIVE_METRICS)
         if not relative_table.empty:
-            st.subheader("Benchmark Relative")
-            st.dataframe(relative_table, hide_index=True)
+            st.subheader("相對基準績效")
+            st.dataframe(display_table(relative_table), hide_index=True)
 
         financing_table = metric_table(metrics, FINANCING_METRICS)
         if not financing_table.empty:
-            st.subheader("Costs And Financing")
-            st.dataframe(financing_table, hide_index=True)
+            st.subheader("成本與資金")
+            st.dataframe(display_table(financing_table), hide_index=True)
     else:
-        st.info("Run a backtest to populate performance metrics.")
+        st.info("請先執行回測以產生績效指標。")
 
     equity = artifacts["backtest_equity"]
     if isinstance(equity, pd.DataFrame) and not equity.empty:
-        st.plotly_chart(px.line(equity, x="date", y="nav", title="Equity Curve"))
+        st.plotly_chart(
+            px.line(
+                equity,
+                x="date",
+                y="nav",
+                title="資產淨值曲線",
+                labels={"date": "日期", "nav": "淨值"},
+            )
+        )
 
     benchmarks = artifacts["benchmark_comparison"]
     if isinstance(benchmarks, pd.DataFrame) and not benchmarks.empty:
-        st.subheader("Benchmarks")
-        st.dataframe(benchmarks)
+        st.subheader("基準策略")
+        st.dataframe(display_table(benchmarks))
 
     portfolio_comparison = artifacts["portfolio_comparison"]
     if (
         isinstance(portfolio_comparison, pd.DataFrame)
         and not portfolio_comparison.empty
     ):
-        st.subheader("Portfolio Comparison")
-        st.dataframe(portfolio_comparison)
+        st.subheader("投資組合比較")
+        st.dataframe(display_table(portfolio_comparison))
 
     common_period = artifacts["common_period_comparison"]
     if isinstance(common_period, pd.DataFrame) and not common_period.empty:
-        st.subheader("Common-Period Portfolio Comparison")
-        st.dataframe(common_period)
+        st.subheader("共同期間投資組合比較")
+        st.dataframe(display_table(common_period))
         if {"portfolio", "sharpe_ratio"}.issubset(common_period.columns):
             st.plotly_chart(
                 px.bar(
                     common_period,
                     x="portfolio",
                     y="sharpe_ratio",
-                    title="Common-Period Sharpe Ratio",
+                    title="共同期間夏普比率",
+                    labels={"portfolio": "投資組合", "sharpe_ratio": "夏普比率"},
                 )
             )
 
     regime_performance = artifacts["regime_performance"]
     if isinstance(regime_performance, pd.DataFrame) and not regime_performance.empty:
-        st.subheader("Market Regimes")
-        st.dataframe(regime_performance)
+        st.subheader("市場狀態分析")
+        st.dataframe(display_table(regime_performance))
         if {"regime", "sharpe_ratio"}.issubset(regime_performance.columns):
             st.plotly_chart(
                 px.bar(
                     regime_performance,
                     x="regime",
                     y="sharpe_ratio",
-                    title="Sharpe Ratio By Market Regime",
+                    title="各市場狀態夏普比率",
+                    labels={"regime": "市場狀態", "sharpe_ratio": "夏普比率"},
                 )
             )
 
     sensitivity = artifacts["sensitivity_comparison"]
     if isinstance(sensitivity, pd.DataFrame) and not sensitivity.empty:
-        st.subheader("Sensitivity Analysis")
-        st.dataframe(sensitivity)
+        st.subheader("敏感度分析")
+        st.dataframe(display_table(sensitivity))
         if {"scenario", "sharpe_ratio"}.issubset(sensitivity.columns):
             st.plotly_chart(
                 px.bar(
                     sensitivity,
                     x="scenario",
                     y="sharpe_ratio",
-                    title="Sharpe Ratio Under Stress Scenarios",
+                    title="壓力情境下的夏普比率",
+                    labels={"scenario": "情境", "sharpe_ratio": "夏普比率"},
                 )
             )
 
     trading_diagnostics = artifacts["trading_diagnostics"]
     if isinstance(trading_diagnostics, pd.DataFrame) and not trading_diagnostics.empty:
-        st.subheader("Trading Diagnostics")
-        st.dataframe(trading_diagnostics)
+        st.subheader("交易診斷")
+        st.dataframe(display_table(trading_diagnostics))
 
     model_comparison = artifacts["model_comparison"]
     if isinstance(model_comparison, pd.DataFrame) and not model_comparison.empty:
-        st.subheader("Model Comparison")
-        st.dataframe(model_comparison)
+        st.subheader("模型比較")
+        st.dataframe(display_table(model_comparison))
 
 with tabs[1]:
     selected_factors = artifacts["selected_factors"]
     if isinstance(selected_factors, pd.DataFrame) and not selected_factors.empty:
-        st.subheader("Selected Factors")
-        st.dataframe(selected_factors)
+        st.subheader("已選因子")
+        st.dataframe(display_table(selected_factors))
         if "selection_score" in selected_factors.columns:
             st.plotly_chart(
                 px.bar(
@@ -187,79 +332,90 @@ with tabs[1]:
                     x="factor",
                     y="selection_score",
                     color="family" if "family" in selected_factors.columns else None,
-                    title="Selected Factor Scores",
+                    title="已選因子分數",
+                    labels={
+                        "factor": "因子",
+                        "selection_score": "選擇分數",
+                        "family": "因子類別",
+                    },
                 )
             )
 
-    st.subheader("Factor IC Summary")
+    st.subheader("因子 IC 摘要")
     factor_ic = artifacts["factor_ic"]
     if isinstance(factor_ic, pd.DataFrame) and not factor_ic.empty:
-        st.dataframe(factor_ic)
+        st.dataframe(display_table(factor_ic))
         st.plotly_chart(
             px.bar(
                 factor_ic.head(20),
                 x="factor",
                 y="mean_rank_ic",
                 color="family",
-                title="Top Factor Rank IC",
+                title="最佳因子 Rank IC",
+                labels={
+                    "factor": "因子",
+                    "mean_rank_ic": "平均 Rank IC",
+                    "family": "因子類別",
+                },
             )
         )
     else:
-        st.info("Run factor validation to populate the Factor Explorer.")
+        st.info("請先執行因子驗證以產生因子探索結果。")
 
     quantiles = artifacts["factor_quantiles"]
     if isinstance(quantiles, pd.DataFrame) and not quantiles.empty:
-        st.subheader("Quantile Returns")
-        st.dataframe(quantiles)
+        st.subheader("分位數報酬")
+        st.dataframe(display_table(quantiles))
 
     factor_signals = artifacts["factor_signals"]
     if isinstance(factor_signals, pd.DataFrame) and not factor_signals.empty:
-        st.subheader("IC-Weighted Factor Signals")
-        st.dataframe(factor_signals.head(200))
+        st.subheader("IC 加權因子訊號")
+        st.dataframe(display_table(factor_signals.head(200)))
         if "factor_score" in factor_signals.columns:
             st.plotly_chart(
                 px.histogram(
                     factor_signals,
                     x="factor_score",
-                    title="Factor Score Distribution",
+                    title="因子分數分布",
+                    labels={"factor_score": "因子分數"},
                 )
             )
     factor_signals_manifest = artifacts["factor_signals_manifest"]
     if factor_signals_manifest:
-        st.subheader("Factor Signal Manifest")
+        st.subheader("因子訊號執行資訊")
         st.json(factor_signals_manifest)
 
 with tabs[2]:
-    st.subheader("Strategy Target Weights")
+    st.subheader("策略目標權重")
     strategy_manifest = artifacts["strategy_manifest"]
     if strategy_manifest:
-        st.subheader("Strategy Settings")
+        st.subheader("策略設定")
         st.json(strategy_manifest)
     selected_manifest = artifacts["selected_factors_manifest"]
     selected_names = selected_manifest.get("selected_factors", [])
     if selected_names:
-        chosen_factor = st.selectbox("Use Selected Factor", options=selected_names)
-        if st.button("Apply Factor To Strategy Config"):
+        chosen_factor = st.selectbox("選用因子", options=selected_names)
+        if st.button("套用至策略設定"):
             try:
                 apply_selected_factor_to_strategy(
                     factor_index=selected_names.index(chosen_factor)
                 )
             except Exception as exc:
-                st.error(f"Could not update strategy config: {exc}")
+                st.error(f"無法更新策略設定：{exc}")
             else:
-                st.success(f"Strategy score_column set to {chosen_factor}.")
+                st.success(f"策略分數欄位已設為 {chosen_factor}。")
     weights = artifacts["strategy_weights"]
     if isinstance(weights, pd.DataFrame) and not weights.empty:
-        st.dataframe(weights)
+        st.dataframe(display_table(weights))
     else:
-        st.info("Run strategy construction to populate target weights.")
+        st.info("請先建立策略以產生目標權重。")
 
 with tabs[3]:
-    st.subheader("Model Lab")
+    st.subheader("模型實驗室")
     model_comparison = artifacts["model_comparison"]
     if isinstance(model_comparison, pd.DataFrame) and not model_comparison.empty:
-        st.subheader("Model Comparison")
-        st.dataframe(model_comparison)
+        st.subheader("模型比較")
+        st.dataframe(display_table(model_comparison))
         if {"model", "horizon", "rmse"}.issubset(model_comparison.columns):
             st.plotly_chart(
                 px.bar(
@@ -268,15 +424,21 @@ with tabs[3]:
                     y="rmse",
                     color="source" if "source" in model_comparison.columns else None,
                     facet_col="horizon",
-                    title="RMSE by Model and Horizon",
+                    title="各模型與預測週期 RMSE",
+                    labels={
+                        "model": "模型",
+                        "rmse": "RMSE",
+                        "source": "來源",
+                        "horizon": "預測週期",
+                    },
                 )
             )
     else:
-        st.info("Run model training and report aggregation to populate Model Lab.")
+        st.info("請先執行模型訓練與報告彙整。")
 
     transformer_metrics = artifacts["transformer_metrics"]
     if transformer_metrics:
-        st.subheader("Transformer Summary")
+        st.subheader("Transformer 摘要")
         st.json(transformer_metrics)
 
     transformer_predictions = artifacts["transformer_predictions"]
@@ -284,68 +446,79 @@ with tabs[3]:
         isinstance(transformer_predictions, pd.DataFrame)
         and not transformer_predictions.empty
     ):
-        st.subheader("Transformer Test Predictions")
-        st.dataframe(transformer_predictions.head(200))
+        st.subheader("Transformer 測試集預測")
+        st.dataframe(display_table(transformer_predictions.head(200)))
         if {"horizon", "prediction"}.issubset(transformer_predictions.columns):
             st.plotly_chart(
                 px.histogram(
                     transformer_predictions,
                     x="prediction",
                     color="horizon",
-                    title="Prediction Distribution by Horizon",
+                    title="各預測週期的預測值分布",
+                    labels={"prediction": "預測值", "horizon": "預測週期"},
                 )
             )
 
     model_signals = artifacts["model_signals"]
     if isinstance(model_signals, pd.DataFrame) and not model_signals.empty:
-        st.subheader("Strategy-Ready Model Signals")
-        st.dataframe(model_signals.head(200))
+        st.subheader("可供策略使用的模型訊號")
+        st.dataframe(display_table(model_signals.head(200)))
 
 with tabs[4]:
-    st.subheader("Backtest Details")
+    st.subheader("回測明細")
     equity = artifacts["backtest_equity"]
     if isinstance(equity, pd.DataFrame) and not equity.empty:
-        st.dataframe(equity)
+        st.dataframe(display_table(equity))
         exposure = artifacts["backtest_exposure"]
         if isinstance(exposure, pd.DataFrame) and not exposure.empty:
-            st.subheader("Exposure")
-            st.dataframe(exposure)
+            st.subheader("投資組合曝險")
+            st.dataframe(display_table(exposure))
             st.plotly_chart(
                 px.line(
                     exposure,
                     x="date",
                     y=["gross_exposure", "net_exposure"],
-                    title="Portfolio Exposure",
+                    title="投資組合曝險",
+                    labels={
+                        "date": "日期",
+                        "value": "曝險比例",
+                        "variable": "曝險類型",
+                    },
                 )
             )
         sector_exposure = artifacts["backtest_sector_exposure"]
         if isinstance(sector_exposure, pd.DataFrame) and not sector_exposure.empty:
-            st.subheader("Sector Exposure")
-            st.dataframe(sector_exposure)
+            st.subheader("產業曝險")
+            st.dataframe(display_table(sector_exposure))
             st.plotly_chart(
                 px.line(
                     sector_exposure,
                     x="date",
                     y="gross_exposure",
                     color="sector",
-                    title="Sector Gross Exposure",
+                    title="產業總曝險",
+                    labels={
+                        "date": "日期",
+                        "gross_exposure": "總曝險",
+                        "sector": "產業",
+                    },
                 )
             )
         trades = artifacts["backtest_trades"]
         if isinstance(trades, pd.DataFrame) and not trades.empty:
-            st.subheader("Trade Log")
-            st.dataframe(trades)
+            st.subheader("交易紀錄")
+            st.dataframe(display_table(trades))
         attribution_metrics = artifacts["attribution_metrics"]
         if attribution_metrics:
-            st.subheader("Contribution Concentration")
+            st.subheader("報酬貢獻集中度")
             st.json(attribution_metrics)
         attribution_summary = artifacts["attribution_summary"]
         if (
             isinstance(attribution_summary, pd.DataFrame)
             and not attribution_summary.empty
         ):
-            st.subheader("Ticker Return Attribution")
-            st.dataframe(attribution_summary)
+            st.subheader("個股報酬歸因")
+            st.dataframe(display_table(attribution_summary))
             if {"ticker", "total_contribution"}.issubset(
                 attribution_summary.columns
             ):
@@ -354,36 +527,40 @@ with tabs[4]:
                         attribution_summary.head(20),
                         x="ticker",
                         y="total_contribution",
-                        title="Top Gross Return Contributors",
+                        title="主要報酬貢獻股票",
+                        labels={
+                            "ticker": "股票代號",
+                            "total_contribution": "總貢獻",
+                        },
                     )
                 )
     else:
-        st.info("Run a backtest to populate this page.")
+        st.info("請先執行回測以產生本頁內容。")
 
 with tabs[5]:
-    st.subheader("Workflow Runner")
-    st.caption("Runs only known QuantLab scripts through the tested backend modules.")
+    st.subheader("工作流程執行器")
+    st.caption("僅能透過已測試的後端模組執行已登錄的 QuantLab 指令。")
     for step in list_workflow_steps():
         with st.expander(step.label):
             st.write(step.description)
             st.code("python " + " ".join(step.command), language="powershell")
-            if st.button(f"Run {step.label}", key=f"run_{step.name}"):
-                with st.spinner(f"Running {step.label}..."):
+            if st.button(f"執行：{step.label}", key=f"run_{step.name}"):
+                with st.spinner(f"正在執行 {step.label}..."):
                     result = run_workflow_step(step.name)
                 if result["success"]:
-                    st.success(f"{step.label} completed.")
+                    st.success(f"{step.label} 已完成。")
                 else:
-                    st.error(f"{step.label} failed with code {result['returncode']}.")
+                    st.error(f"{step.label} 執行失敗，返回碼 {result['returncode']}。")
                 if result["stdout"]:
-                    st.text_area("stdout", result["stdout"], height=160)
+                    st.text_area("標準輸出", result["stdout"], height=160)
                 if result["stderr"]:
-                    st.text_area("stderr", result["stderr"], height=160)
+                    st.text_area("錯誤輸出", result["stderr"], height=160)
 
-    st.subheader("Recent Runs")
+    st.subheader("近期執行紀錄")
     runs = latest_workflow_runs()
     if runs:
         st.dataframe(
-            pd.DataFrame(
+            display_table(pd.DataFrame(
                 [
                     {
                         "step": run["step"],
@@ -394,16 +571,16 @@ with tabs[5]:
                     }
                     for run in runs
                 ]
-            )
+            ))
         )
     else:
-        st.info("No workflow runs recorded yet.")
+        st.info("目前尚無工作流程執行紀錄。")
 
 with tabs[6]:
-    st.subheader("Configuration Editor")
-    st.caption("Only known QuantLab YAML configs can be edited here.")
+    st.subheader("設定檔編輯器")
+    st.caption("此處僅允許編輯已登錄的 QuantLab YAML 設定檔。")
     entries = {entry.name: entry for entry in list_config_entries()}
-    selected = st.selectbox("Config", options=list(entries))
+    selected = st.selectbox("設定檔", options=list(entries))
     st.write(entries[selected].description)
     try:
         current_text = read_config_text(selected)
@@ -411,67 +588,69 @@ with tabs[6]:
         st.error(str(exc))
         current_text = ""
     edited = st.text_area("YAML", current_text, height=360)
-    if st.button("Validate and Save Config"):
+    if st.button("驗證並儲存設定"):
         try:
             parsed = write_config_text(selected, edited)
         except Exception as exc:
-            st.error(f"Config was not saved: {exc}")
+            st.error(f"設定檔未儲存：{exc}")
         else:
-            st.success(f"Saved {selected} config with {len(parsed)} top-level keys.")
+            st.success(f"已儲存 {selected}，共 {len(parsed)} 個頂層欄位。")
 
 with tabs[7]:
-    st.subheader("Strategy Studio")
+    st.subheader("策略工作室")
     st.caption(
-        "Design versioned strategies, run backtests, compare runs, and search "
-        "for constraint-aware candidates."
+        "建立版本化策略、執行回測、比較結果，並搜尋符合限制條件的候選方案。"
     )
     strategy_paths = sorted(Path("strategies").glob("*.yaml"))
     if strategy_paths:
         selected_strategy = st.selectbox(
-            "Strategy specification",
+            "策略規格",
             options=strategy_paths,
             format_func=lambda path: path.name,
         )
         strategy_text = st.text_area(
-            "StrategySpec YAML",
+            "策略規格 YAML",
             selected_strategy.read_text(encoding="utf-8"),
             height=500,
         )
         save_column, run_column = st.columns(2)
-        if save_column.button("Validate and Save Strategy"):
+        if save_column.button("驗證並儲存策略"):
             try:
                 payload = yaml.safe_load(strategy_text) or {}
                 spec = strategy_spec_from_dict(payload)
                 save_strategy_spec(spec, selected_strategy)
             except Exception as exc:
-                st.error(f"Strategy was not saved: {exc}")
+                st.error(f"策略未儲存：{exc}")
             else:
-                st.success(f"Saved {spec.name} {spec.version} ({spec.spec_hash[:8]}).")
-        if run_column.button("Run Strategy"):
+                st.success(
+                    f"已儲存 {spec.name} {spec.version} "
+                    f"({spec.spec_hash[:8]})。"
+                )
+        if run_column.button("執行策略"):
             try:
                 payload = yaml.safe_load(strategy_text) or {}
                 spec = strategy_spec_from_dict(payload)
                 result = StrategyStudioRunner().run(spec)
             except Exception as exc:
-                st.error(f"Strategy run failed: {exc}")
+                st.error(f"策略執行失敗：{exc}")
             else:
-                st.success(f"Completed {result.run_id}")
+                st.success(f"已完成 {result.run_id}")
                 st.json(result.metrics)
     else:
-        st.info("Add a StrategySpec YAML file under strategies/.")
+        st.info("請在 strategies/ 目錄新增策略規格 YAML 檔案。")
 
     registry = StrategyRunRegistry()
     run_summary = registry.summary()
-    st.subheader("Saved Runs")
+    st.subheader("已儲存的執行紀錄")
     if run_summary.empty:
-        st.info("No Strategy Studio runs have been saved yet.")
+        st.info("目前尚無策略工作室執行紀錄。")
     else:
-        st.dataframe(run_summary, hide_index=True)
+        st.dataframe(display_table(run_summary), hide_index=True)
         selected_runs = st.multiselect(
-            "Runs to compare",
+            "選擇要比較的執行紀錄",
             options=run_summary["run_id"].tolist(),
         )
-        if st.button("Compare Selected Runs"):
+        if st.button("比較所選紀錄"):
             try:
                 comparison = compare_strategy_runs(
                     selected_runs,
@@ -479,9 +658,9 @@ with tabs[7]:
                     "artifacts/studio/comparisons/gui_latest",
                 )
             except Exception as exc:
-                st.error(f"Run comparison failed: {exc}")
+                st.error(f"執行結果比較失敗：{exc}")
             else:
-                st.dataframe(comparison, hide_index=True)
+                st.dataframe(display_table(comparison), hide_index=True)
                 st.plotly_chart(
                     px.scatter(
                         comparison,
@@ -489,28 +668,33 @@ with tabs[7]:
                         y="annual_return",
                         color="sharpe_ratio",
                         hover_name="portfolio",
-                        title="Common-Period Risk and Return",
+                        title="共同期間風險與報酬",
+                        labels={
+                            "max_drawdown": "最大回撤",
+                            "annual_return": "年化報酬率",
+                            "sharpe_ratio": "夏普比率",
+                            "portfolio": "投資組合",
+                        },
                     )
                 )
 
-    st.subheader("Strategy Optimizer")
+    st.subheader("策略優化器")
     st.caption(
-        "Searches parameter combinations, applies constraints, and marks "
-        "Pareto-efficient candidates on a common period."
+        "搜尋參數組合、套用限制條件，並在共同期間標示 Pareto 有效率候選方案。"
     )
-    if st.button("Run Configured Optimization"):
+    if st.button("執行設定好的策略優化"):
         try:
             optimization = StrategyOptimizer(
                 load_optimization_config("configs/studio_optimizer.yaml")
             ).run()
         except Exception as exc:
-            st.error(f"Optimization failed: {exc}")
+            st.error(f"策略優化失敗：{exc}")
         else:
-            st.dataframe(optimization, hide_index=True)
+            st.dataframe(display_table(optimization), hide_index=True)
     optimization_path = Path("artifacts/studio/optimizations/factor_search/results.csv")
     if optimization_path.exists():
         latest_optimization = pd.read_csv(optimization_path)
-        st.dataframe(latest_optimization, hide_index=True)
+        st.dataframe(display_table(latest_optimization), hide_index=True)
         if {"max_drawdown", "annual_return", "pareto_efficient"}.issubset(
             latest_optimization.columns
         ):
@@ -521,16 +705,22 @@ with tabs[7]:
                     y="annual_return",
                     color="pareto_efficient",
                     hover_name="run_id",
-                    title="Strategy Candidate Pareto Frontier",
+                    title="策略候選方案 Pareto 前緣",
+                    labels={
+                        "max_drawdown": "最大回撤",
+                        "annual_return": "年化報酬率",
+                        "pareto_efficient": "Pareto 有效率",
+                        "run_id": "執行編號",
+                    },
                 )
             )
 
-    st.subheader("Personalized Candidates")
+    st.subheader("個人化候選方案")
     st.caption(
-        "Applies the configured risk tolerance, drawdown, turnover, and return "
-        "constraints. Rankings are historical candidates, not return guarantees."
+        "依設定的風險承受度、回撤、換手率與報酬限制篩選。排名僅代表歷史候選結果，"
+        "不構成報酬保證。"
     )
-    if st.button("Build Profile Recommendations"):
+    if st.button("建立個人需求推薦"):
         try:
             profile = load_recommendation_profile("configs/studio_profile.yaml")
             candidates = pd.read_csv(optimization_path)
@@ -541,11 +731,11 @@ with tabs[7]:
                 "artifacts/studio/recommendations",
             )
         except Exception as exc:
-            st.error(f"Recommendation failed: {exc}")
+            st.error(f"推薦建立失敗：{exc}")
         else:
-            st.dataframe(recommendations, hide_index=True)
+            st.dataframe(display_table(recommendations), hide_index=True)
     recommendation_path = Path(
         "artifacts/studio/recommendations/recommendations.csv"
     )
     if recommendation_path.exists():
-        st.dataframe(pd.read_csv(recommendation_path), hide_index=True)
+        st.dataframe(display_table(pd.read_csv(recommendation_path)), hide_index=True)
