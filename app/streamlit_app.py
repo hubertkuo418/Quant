@@ -22,6 +22,14 @@ from equity_transformer.gui.metrics import (
     metric_table,
 )
 from equity_transformer.gui.strategy_builder import apply_selected_factor_to_strategy
+from equity_transformer.gui.studio_wizard import (
+    StrategyWizardValues,
+    build_strategy_from_wizard,
+    components_from_frame,
+    components_to_frame,
+    strategy_output_path,
+    strategy_to_wizard_values,
+)
 from equity_transformer.gui.workflow import (
     latest_workflow_runs,
     list_workflow_steps,
@@ -40,6 +48,7 @@ from equity_transformer.studio.recommendation import (
 from equity_transformer.studio.registry import StrategyRunRegistry
 from equity_transformer.studio.runner import StrategyStudioRunner
 from equity_transformer.studio.specs import (
+    load_strategy_spec,
     save_strategy_spec,
     strategy_spec_from_dict,
 )
@@ -608,34 +617,350 @@ with tabs[7]:
             options=strategy_paths,
             format_func=lambda path: path.name,
         )
-        strategy_text = st.text_area(
-            "策略規格 YAML",
-            selected_strategy.read_text(encoding="utf-8"),
-            height=500,
+        editing_mode = st.radio(
+            "編輯模式",
+            options=["視覺化策略精靈", "進階 YAML"],
+            horizontal=True,
         )
-        save_column, run_column = st.columns(2)
-        if save_column.button("驗證並儲存策略"):
-            try:
-                payload = yaml.safe_load(strategy_text) or {}
-                spec = strategy_spec_from_dict(payload)
-                save_strategy_spec(spec, selected_strategy)
-            except Exception as exc:
-                st.error(f"策略未儲存：{exc}")
-            else:
-                st.success(
-                    f"已儲存 {spec.name} {spec.version} "
-                    f"({spec.spec_hash[:8]})。"
+        if editing_mode == "視覺化策略精靈":
+            base_spec = load_strategy_spec(selected_strategy)
+            defaults = strategy_to_wizard_values(base_spec)
+            with st.form("strategy_wizard"):
+                st.markdown("#### 1. 基本資訊")
+                basic_name, basic_version = st.columns([2, 1])
+                name = basic_name.text_input(
+                    "策略名稱",
+                    value=defaults.name,
+                    help="修改名稱時會自動建立新的策略 YAML 檔案。",
                 )
-        if run_column.button("執行策略"):
-            try:
-                payload = yaml.safe_load(strategy_text) or {}
-                spec = strategy_spec_from_dict(payload)
-                result = StrategyStudioRunner().run(spec)
-            except Exception as exc:
-                st.error(f"策略執行失敗：{exc}")
-            else:
-                st.success(f"已完成 {result.run_id}")
-                st.json(result.metrics)
+                version = basic_version.text_input(
+                    "版本",
+                    value=defaults.version,
+                    help="建議使用 1.0.0 這類語意化版本。",
+                )
+                description = st.text_area(
+                    "策略說明",
+                    value=defaults.description,
+                    height=80,
+                )
+
+                st.markdown("#### 2. 資料與訊號")
+                market_path = st.text_input(
+                    "市場資料路徑",
+                    value=defaults.market_path,
+                )
+                signal_path = st.text_input(
+                    "訊號資料路徑",
+                    value=defaults.signal_path,
+                )
+                signal_left, signal_middle, signal_right = st.columns(3)
+                score_column = signal_left.text_input(
+                    "策略分數欄位",
+                    value=defaults.score_column,
+                )
+                volatility_column = signal_middle.text_input(
+                    "波動率欄位（選填）",
+                    value=defaults.volatility_column,
+                )
+                sector_column = signal_right.text_input(
+                    "產業欄位（選填）",
+                    value=defaults.sector_column,
+                )
+                st.caption(
+                    "多訊號元件會依權重合成策略分數；留空代表直接使用分數欄位。"
+                )
+                component_frame = st.data_editor(
+                    components_to_frame(base_spec.signal.components),
+                    num_rows="dynamic",
+                    hide_index=True,
+                    use_container_width=True,
+                    column_config={
+                        "column": st.column_config.TextColumn("訊號欄位"),
+                        "weight": st.column_config.NumberColumn(
+                            "權重",
+                            format="%.3f",
+                        ),
+                        "transform": st.column_config.SelectboxColumn(
+                            "轉換方式",
+                            options=[
+                                "raw",
+                                "cross_sectional_rank",
+                                "cross_sectional_zscore",
+                            ],
+                        ),
+                    },
+                )
+
+                st.markdown("#### 3. 股票池與投資組合")
+                universe_left, universe_middle, universe_right = st.columns(3)
+                excluded_tickers = universe_left.text_input(
+                    "排除股票（逗號分隔）",
+                    value=defaults.excluded_tickers,
+                )
+                start_date = universe_middle.text_input(
+                    "回測起始日（選填）",
+                    value=defaults.start_date,
+                    placeholder="YYYY-MM-DD",
+                )
+                end_date = universe_right.text_input(
+                    "回測結束日（選填）",
+                    value=defaults.end_date,
+                    placeholder="YYYY-MM-DD",
+                )
+                strategy_types = ["long_only_top_k", "long_short_quantile"]
+                weighting_options = [
+                    "equal",
+                    "score",
+                    "inverse_volatility",
+                    "risk_parity",
+                ]
+                rebalance_options = ["D", "W-FRI", "ME"]
+                portfolio_left, portfolio_middle, portfolio_right = st.columns(3)
+                strategy_type = portfolio_left.selectbox(
+                    "組合類型",
+                    options=strategy_types,
+                    index=strategy_types.index(defaults.strategy_type),
+                    format_func=lambda value: {
+                        "long_only_top_k": "僅做多 Top-K",
+                        "long_short_quantile": "多空分位數",
+                    }[value],
+                )
+                weighting = portfolio_middle.selectbox(
+                    "權重方式",
+                    options=weighting_options,
+                    index=weighting_options.index(defaults.weighting),
+                    format_func=lambda value: {
+                        "equal": "等權重",
+                        "score": "依分數加權",
+                        "inverse_volatility": "反波動率",
+                        "risk_parity": "風險平價",
+                    }[value],
+                )
+                rebalance_frequency = portfolio_right.selectbox(
+                    "再平衡頻率",
+                    options=rebalance_options,
+                    index=(
+                        rebalance_options.index(defaults.rebalance_frequency)
+                        if defaults.rebalance_frequency in rebalance_options
+                        else 1
+                    ),
+                    format_func=lambda value: {
+                        "D": "每日",
+                        "W-FRI": "每週五",
+                        "ME": "每月底",
+                    }[value],
+                )
+                portfolio_size, long_side, short_side = st.columns(3)
+                top_k = portfolio_size.number_input(
+                    "Top-K 持股數",
+                    min_value=1,
+                    value=defaults.top_k,
+                    step=1,
+                )
+                long_quantile = long_side.number_input(
+                    "多頭分位比例",
+                    min_value=0.01,
+                    max_value=0.5,
+                    value=defaults.long_quantile,
+                    step=0.05,
+                )
+                short_quantile = short_side.number_input(
+                    "空頭分位比例",
+                    min_value=0.01,
+                    max_value=0.5,
+                    value=defaults.short_quantile,
+                    step=0.05,
+                )
+
+                st.markdown("#### 4. 風險限制")
+                risk_toggle_1, risk_toggle_2, risk_toggle_3 = st.columns(3)
+                use_position_limit = risk_toggle_1.checkbox(
+                    "啟用單一持股上限",
+                    value=defaults.use_position_limit,
+                )
+                use_sector_limit = risk_toggle_2.checkbox(
+                    "啟用產業權重上限",
+                    value=defaults.use_sector_limit,
+                )
+                use_liquidity_limit = risk_toggle_3.checkbox(
+                    "啟用最低流動性",
+                    value=defaults.use_liquidity_limit,
+                )
+                risk_value_1, risk_value_2, risk_value_3 = st.columns(3)
+                max_position_weight = risk_value_1.number_input(
+                    "單一持股權重上限",
+                    min_value=0.01,
+                    max_value=1.0,
+                    value=defaults.max_position_weight,
+                    step=0.01,
+                    disabled=not use_position_limit,
+                )
+                max_sector_weight = risk_value_2.number_input(
+                    "產業權重上限",
+                    min_value=0.01,
+                    max_value=1.0,
+                    value=defaults.max_sector_weight,
+                    step=0.05,
+                    disabled=not use_sector_limit,
+                )
+                min_dollar_volume = risk_value_3.number_input(
+                    "最低日均成交額",
+                    min_value=0.0,
+                    value=defaults.min_dollar_volume,
+                    step=1_000_000.0,
+                    disabled=not use_liquidity_limit,
+                )
+                liquidity_window = st.number_input(
+                    "流動性計算天數",
+                    min_value=1,
+                    value=defaults.liquidity_window,
+                    step=1,
+                )
+
+                st.markdown("#### 5. 交易與成本")
+                execution_1, execution_2, execution_3, execution_4 = st.columns(4)
+                initial_capital = execution_1.number_input(
+                    "初始資金",
+                    min_value=1.0,
+                    value=defaults.initial_capital,
+                    step=100_000.0,
+                )
+                commission_bps = execution_2.number_input(
+                    "手續費（基點）",
+                    min_value=0.0,
+                    value=defaults.commission_bps,
+                    step=1.0,
+                )
+                slippage_bps = execution_3.number_input(
+                    "滑價（基點）",
+                    min_value=0.0,
+                    value=defaults.slippage_bps,
+                    step=1.0,
+                )
+                execution_lag_days = execution_4.number_input(
+                    "執行延遲天數",
+                    min_value=0,
+                    value=defaults.execution_lag_days,
+                    step=1,
+                )
+                rate_1, rate_2, rate_3 = st.columns(3)
+                annual_cash_rate = rate_1.number_input(
+                    "年化現金利率",
+                    value=defaults.annual_cash_rate,
+                    step=0.005,
+                    format="%.4f",
+                )
+                annual_borrow_rate = rate_2.number_input(
+                    "年化借券費率",
+                    min_value=0.0,
+                    value=defaults.annual_borrow_rate,
+                    step=0.01,
+                    format="%.4f",
+                )
+                risk_free_rate = rate_3.number_input(
+                    "無風險利率",
+                    value=defaults.risk_free_rate,
+                    step=0.005,
+                    format="%.4f",
+                )
+                benchmark_ticker = st.text_input(
+                    "比較基準股票代號",
+                    value=defaults.benchmark_ticker,
+                )
+                save_wizard, run_wizard = st.columns(2)
+                save_requested = save_wizard.form_submit_button(
+                    "驗證並儲存策略",
+                    use_container_width=True,
+                )
+                run_requested = run_wizard.form_submit_button(
+                    "儲存並立即回測",
+                    use_container_width=True,
+                    type="primary",
+                )
+
+            if save_requested or run_requested:
+                try:
+                    wizard_values = StrategyWizardValues(
+                        name=name,
+                        version=version,
+                        description=description,
+                        market_path=market_path,
+                        signal_path=signal_path,
+                        score_column=score_column,
+                        volatility_column=volatility_column,
+                        sector_column=sector_column,
+                        excluded_tickers=excluded_tickers,
+                        start_date=start_date,
+                        end_date=end_date,
+                        strategy_type=strategy_type,
+                        top_k=int(top_k),
+                        long_quantile=long_quantile,
+                        short_quantile=short_quantile,
+                        weighting=weighting,
+                        rebalance_frequency=rebalance_frequency,
+                        use_position_limit=use_position_limit,
+                        max_position_weight=max_position_weight,
+                        use_sector_limit=use_sector_limit,
+                        max_sector_weight=max_sector_weight,
+                        use_liquidity_limit=use_liquidity_limit,
+                        min_dollar_volume=min_dollar_volume,
+                        liquidity_window=int(liquidity_window),
+                        initial_capital=initial_capital,
+                        commission_bps=commission_bps,
+                        slippage_bps=slippage_bps,
+                        execution_lag_days=int(execution_lag_days),
+                        annual_cash_rate=annual_cash_rate,
+                        annual_borrow_rate=annual_borrow_rate,
+                        benchmark_ticker=benchmark_ticker,
+                        risk_free_rate=risk_free_rate,
+                    )
+                    spec = build_strategy_from_wizard(
+                        base_spec,
+                        wizard_values,
+                        components_from_frame(component_frame),
+                    )
+                    output_path = strategy_output_path(spec)
+                    save_strategy_spec(spec, output_path)
+                    if run_requested:
+                        result = StrategyStudioRunner().run(spec)
+                except Exception as exc:
+                    st.error(f"策略處理失敗：{exc}")
+                else:
+                    st.success(
+                        f"已儲存至 {output_path}；規格雜湊 {spec.spec_hash[:8]}。"
+                    )
+                    if run_requested:
+                        st.success(f"回測已完成：{result.run_id}")
+                        st.json(result.metrics)
+        else:
+            strategy_text = st.text_area(
+                "策略規格 YAML",
+                selected_strategy.read_text(encoding="utf-8"),
+                height=500,
+            )
+            save_column, run_column = st.columns(2)
+            if save_column.button("驗證並儲存 YAML"):
+                try:
+                    payload = yaml.safe_load(strategy_text) or {}
+                    spec = strategy_spec_from_dict(payload)
+                    save_strategy_spec(spec, selected_strategy)
+                except Exception as exc:
+                    st.error(f"策略未儲存：{exc}")
+                else:
+                    st.success(
+                        f"已儲存 {spec.name} {spec.version} "
+                        f"({spec.spec_hash[:8]})。"
+                    )
+            if run_column.button("執行 YAML 策略"):
+                try:
+                    payload = yaml.safe_load(strategy_text) or {}
+                    spec = strategy_spec_from_dict(payload)
+                    result = StrategyStudioRunner().run(spec)
+                except Exception as exc:
+                    st.error(f"策略執行失敗：{exc}")
+                else:
+                    st.success(f"已完成 {result.run_id}")
+                    st.json(result.metrics)
     else:
         st.info("請在 strategies/ 目錄新增策略規格 YAML 檔案。")
 

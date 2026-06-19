@@ -48,6 +48,22 @@ creates an immutable registry entry containing configuration and data hashes,
 environment metadata, portfolio artifacts, and performance metrics. Comparison
 and recommendation views use a common evaluation period.
 
+## Visual Strategy Wizard
+
+The default Strategy Studio editing mode is a Chinese no-code wizard covering:
+
+- strategy identity and version;
+- market data, signal data, and editable multi-signal components;
+- universe exclusions and test dates;
+- long-only or long-short construction, weighting, and rebalance frequency;
+- position, sector, and liquidity limits;
+- capital, costs, execution lag, financing, and benchmark assumptions.
+
+The wizard converts every submission back into the same validated
+`StrategySpec` used by CLI workflows. Changing the strategy name creates a new
+slug-based YAML file; using the same name updates that strategy. Advanced YAML
+mode remains available for fields that are not yet exposed in the wizard.
+
 The Strategy tab can apply a selected factor from
 `artifacts/factors/selected_factors.json` to `configs/strategy.yaml` as the
 strategy `score_column`.

@@ -6,11 +6,14 @@ strategies through a shared research and portfolio engine.
 Factor models, technical rules, machine learning, LSTM, and Transformer
 forecasts are interchangeable signal components rather than the identity of the
 project. See [docs/PROJECT_PLAN.md](docs/PROJECT_PLAN.md) for the platform plan.
+The active product roadmap is tracked in [docs/V1_1_PLAN.md](docs/V1_1_PLAN.md).
 
 ## Current Scope
 
 - Strategy Studio: versioned YAML specifications, run registry, comparison,
   constraints, grid/random search, and Pareto candidates
+- Chinese no-code strategy wizard with multi-signal, portfolio, risk, and
+  execution controls, plus an advanced YAML mode
 - Universe: configurable liquid US equities (MVP list included)
 - Market data: Nasdaq daily OHLCV or validated local CSV imports
 - Storage: immutable per-symbol raw Parquet files and a clean panel dataset
