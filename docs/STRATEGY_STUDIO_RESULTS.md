@@ -28,6 +28,19 @@
 | 4.0000 | 20260618T210628523091Z_factor-top10_b6a56e95 | 0.5750 | 0.4015 | 1.7723 | -0.0715 | 0.2073 | balanced profile; Sharpe 1.77, drawdown -7.1%, turnover 20.7%, worst-lag Sharpe 0.74 |
 | 5.0000 | 20260618T210627921017Z_factor-top10_68477841 | 0.5500 | 0.4751 | 1.7562 | -0.0853 | 0.1763 | balanced profile; Sharpe 1.76, drawdown -8.5%, turnover 17.6%, worst-lag Sharpe 1.76 |
 
+## Frozen-Strategy Walk-Forward OOS
+
+- Folds: 3
+- Total return: 0.1607
+- Sharpe ratio: 4.3349
+- Maximum drawdown: -0.0436
+
+| fold | train_start | train_end | test_start | test_end | total_return | sharpe_ratio | max_drawdown |
+| --- | --- | --- | --- | --- | --- | --- | --- |
+| 10.0000 | 2025-09-10 | 2026-03-03 | 2026-03-11 | 2026-04-08 | 0.0004 | 0.1109 | -0.0436 |
+| 11.0000 | 2025-10-08 | 2026-03-31 | 2026-04-09 | 2026-05-06 | 0.1315 | 9.3795 | -0.0100 |
+| 12.0000 | 2025-11-05 | 2026-04-29 | 2026-05-07 | 2026-06-04 | 0.0254 | 2.7320 | -0.0149 |
+
 ## Interpretation Boundaries
 
 - The live data window is short and uses a present-day static universe.
@@ -35,3 +48,5 @@
 - Optimizer results are recomputed on a common period before ranking.
 - Execution lag 1/2 sensitivity is included in recommendation robustness.
 - Candidate rankings describe historical fit under configured constraints.
+- Walk-forward uses a frozen strategy and does not refit factors inside each fold.
+- The current stitched OOS result has only three short folds; one strong fold dominates the aggregate.

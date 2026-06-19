@@ -1,0 +1,11 @@
+strategy_spec_path: strategies/factor_top10.yaml
+output_dir: artifacts/studio/walk_forward/factor_top10
+train_days: 120
+test_days: 20
+step_days: 20
+purge_days: 5
+anchored_train: false
+start_date: null
+end_date: null
+# Defaults to StrategySpec universe.start_date when null.
+first_test_date: null

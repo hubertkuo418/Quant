@@ -36,6 +36,10 @@ from equity_transformer.gui.workflow import (
     run_workflow_step,
 )
 from equity_transformer.studio.comparison import compare_strategy_runs
+from equity_transformer.studio.lifecycle import (
+    StrategyLifecycleManager,
+    compare_strategy_versions,
+)
 from equity_transformer.studio.optimizer import (
     StrategyOptimizer,
     load_optimization_config,
@@ -49,8 +53,11 @@ from equity_transformer.studio.registry import StrategyRunRegistry
 from equity_transformer.studio.runner import StrategyStudioRunner
 from equity_transformer.studio.specs import (
     load_strategy_spec,
-    save_strategy_spec,
     strategy_spec_from_dict,
+)
+from equity_transformer.studio.walk_forward import (
+    WalkForwardConfig,
+    WalkForwardEvaluator,
 )
 
 DISPLAY_LABELS = {
@@ -73,6 +80,7 @@ DISPLAY_LABELS = {
     "cagr": "年複合成長率",
     "calmar_ratio": "Calmar 比率",
     "cash_interest": "現金利息",
+    "changed": "是否變更",
     "commission_bps": "手續費（基點）",
     "common_end": "共同結束日",
     "common_start": "共同起始日",
@@ -90,6 +98,8 @@ DISPLAY_LABELS = {
     "evaluation_basis": "評估基礎",
     "execution_lag_days": "執行延遲天數",
     "execution_robustness": "執行穩健性",
+    "field": "設定欄位",
+    "fold": "Fold",
     "family": "因子類別",
     "factor": "因子",
     "factor_score": "因子分數",
@@ -103,6 +113,7 @@ DISPLAY_LABELS = {
     "icir": "ICIR",
     "information_ratio": "資訊比率",
     "lag_sharpe_std": "延遲夏普標準差",
+    "left": "版本 A",
     "long_exposure": "多頭曝險",
     "max_drawdown": "最大回撤",
     "max_gross_exposure": "最大總曝險",
@@ -125,6 +136,7 @@ DISPLAY_LABELS = {
     "prediction": "預測值",
     "profit_factor": "獲利因子",
     "profile": "需求設定",
+    "path": "檔案路徑",
     "quantile": "分位數",
     "rank_ic_std": "Rank IC 標準差",
     "rank_icir": "Rank ICIR",
@@ -132,6 +144,7 @@ DISPLAY_LABELS = {
     "recommendation_rank": "推薦排名",
     "recommendation_score": "推薦分數",
     "returncode": "返回碼",
+    "right": "版本 B",
     "run_id": "執行編號",
     "scenario": "情境",
     "score": "分數",
@@ -150,9 +163,12 @@ DISPLAY_LABELS = {
     "step": "步驟",
     "strategy": "策略",
     "strategy_family": "策略類別",
+    "status": "狀態",
     "success": "成功",
     "target": "實際值",
     "ticker": "股票代號",
+    "test_end": "測試結束日",
+    "test_start": "測試起始日",
     "to_weight": "目標權重",
     "total_abs_trade_value": "絕對交易總額",
     "total_borrow_cost": "借券總成本",
@@ -162,6 +178,8 @@ DISPLAY_LABELS = {
     "total_return": "總報酬率",
     "total_trade_cost": "交易總成本",
     "tracking_error": "追蹤誤差",
+    "train_end": "訓練結束日",
+    "train_start": "訓練起始日",
     "trade_count": "交易筆數",
     "trade_value": "交易金額",
     "trial": "試驗編號",
@@ -610,6 +628,7 @@ with tabs[7]:
     st.caption(
         "建立版本化策略、執行回測、比較結果，並搜尋符合限制條件的候選方案。"
     )
+    lifecycle = StrategyLifecycleManager()
     strategy_paths = sorted(Path("strategies").glob("*.yaml"))
     if strategy_paths:
         selected_strategy = st.selectbox(
@@ -919,8 +938,12 @@ with tabs[7]:
                         wizard_values,
                         components_from_frame(component_frame),
                     )
-                    output_path = strategy_output_path(spec)
-                    save_strategy_spec(spec, output_path)
+                    output_path = (
+                        selected_strategy
+                        if spec.slug == base_spec.slug
+                        else strategy_output_path(spec)
+                    )
+                    lifecycle.save(spec, output_path)
                     if run_requested:
                         result = StrategyStudioRunner().run(spec)
                 except Exception as exc:
@@ -943,7 +966,7 @@ with tabs[7]:
                 try:
                     payload = yaml.safe_load(strategy_text) or {}
                     spec = strategy_spec_from_dict(payload)
-                    save_strategy_spec(spec, selected_strategy)
+                    lifecycle.save(spec, selected_strategy)
                 except Exception as exc:
                     st.error(f"策略未儲存：{exc}")
                 else:
@@ -963,6 +986,207 @@ with tabs[7]:
                     st.json(result.metrics)
     else:
         st.info("請在 strategies/ 目錄新增策略規格 YAML 檔案。")
+
+    st.divider()
+    st.subheader("策略版本與生命週期")
+    st.caption("所有覆寫都會保留舊版；刪除採可還原的軟刪除方式。")
+    if strategy_paths:
+        current_spec = load_strategy_spec(selected_strategy)
+        versions = lifecycle.versions(selected_strategy)
+        version_table = pd.DataFrame(
+            [
+                {
+                    "status": record.status,
+                    "version": record.version,
+                    "spec_hash": record.spec_hash[:12],
+                    "path": str(record.path),
+                }
+                for record in versions
+            ]
+        )
+        st.dataframe(display_table(version_table), hide_index=True)
+
+        if len(versions) >= 2:
+            version_left, version_right = st.columns(2)
+            left_version = version_left.selectbox(
+                "版本 A",
+                options=versions,
+                format_func=lambda record: record.label,
+                key="lifecycle_left_version",
+            )
+            right_version = version_right.selectbox(
+                "版本 B",
+                options=versions,
+                index=1,
+                format_func=lambda record: record.label,
+                key="lifecycle_right_version",
+            )
+            if st.button("比較策略版本差異"):
+                version_diff = compare_strategy_versions(
+                    load_strategy_spec(left_version.path),
+                    load_strategy_spec(right_version.path),
+                )
+                if version_diff.empty:
+                    st.info("兩個版本內容完全相同。")
+                else:
+                    st.dataframe(display_table(version_diff), hide_index=True)
+        else:
+            st.info("目前只有一個版本；下次修改並儲存後會自動保留舊版。")
+
+        with st.expander("複製為新策略"):
+            duplicate_name = st.text_input(
+                "新策略名稱",
+                value=f"{current_spec.name}-copy",
+                key="lifecycle_duplicate_name",
+            )
+            duplicate_version = st.text_input(
+                "新策略版本",
+                value="1.0.0",
+                key="lifecycle_duplicate_version",
+            )
+            if st.button("建立策略副本"):
+                try:
+                    duplicate_path = lifecycle.duplicate(
+                        selected_strategy,
+                        duplicate_name,
+                        duplicate_version,
+                    )
+                except Exception as exc:
+                    st.error(f"策略複製失敗：{exc}")
+                else:
+                    st.success(f"已建立策略副本：{duplicate_path}")
+
+        archive_column, delete_column = st.columns(2)
+        with archive_column:
+            st.markdown("#### 封存")
+            st.caption("封存後不再出現在啟用策略清單，但可隨時還原。")
+            if st.button("封存目前策略", use_container_width=True):
+                try:
+                    archive_path = lifecycle.archive(selected_strategy)
+                except Exception as exc:
+                    st.error(f"策略封存失敗：{exc}")
+                else:
+                    st.success(f"策略已封存：{archive_path}")
+        with delete_column:
+            st.markdown("#### 軟刪除")
+            confirmation_name = st.text_input(
+                f"輸入策略名稱「{current_spec.name}」以啟用刪除",
+                key="lifecycle_delete_confirmation",
+            )
+            if st.button(
+                "將目前策略移至垃圾區",
+                disabled=confirmation_name != current_spec.name,
+                use_container_width=True,
+            ):
+                try:
+                    deleted_path = lifecycle.soft_delete(
+                        selected_strategy,
+                        confirmation_name,
+                    )
+                except Exception as exc:
+                    st.error(f"策略刪除失敗：{exc}")
+                else:
+                    st.success(f"策略已移至垃圾區：{deleted_path}")
+
+    recoverable = [*lifecycle.archived(), *lifecycle.deleted()]
+    if recoverable:
+        with st.expander("還原封存或已刪除策略"):
+            restore_record = st.selectbox(
+                "選擇要還原的策略",
+                options=recoverable,
+                format_func=lambda record: (
+                    f"{record.status} | {record.name} | {record.version}"
+                ),
+                key="lifecycle_restore_record",
+            )
+            if st.button("還原策略"):
+                try:
+                    restored_path = lifecycle.restore(restore_record.path)
+                except Exception as exc:
+                    st.error(f"策略還原失敗：{exc}")
+                else:
+                    st.success(f"策略已還原：{restored_path}")
+
+    st.divider()
+    st.subheader("Walk-forward 樣本外評估")
+    st.caption(
+        "使用凍結策略、purge gap 與互不重疊測試窗，拼接真正的滾動 OOS 績效。"
+    )
+    if strategy_paths and selected_strategy.exists():
+        with st.form("walk_forward_form"):
+            wf_1, wf_2, wf_3, wf_4 = st.columns(4)
+            wf_train_days = wf_1.number_input(
+                "訓練窗交易日",
+                min_value=20,
+                value=120,
+                step=20,
+            )
+            wf_test_days = wf_2.number_input(
+                "測試窗交易日",
+                min_value=5,
+                value=20,
+                step=5,
+            )
+            wf_step_days = wf_3.number_input(
+                "每次前進交易日",
+                min_value=5,
+                value=20,
+                step=5,
+            )
+            wf_purge_days = wf_4.number_input(
+                "Purge gap 交易日",
+                min_value=0,
+                value=5,
+                step=1,
+            )
+            wf_anchored = st.checkbox(
+                "使用 Anchored 訓練窗（起點固定）",
+                value=False,
+            )
+            run_walk_forward = st.form_submit_button(
+                "執行 Walk-forward 評估",
+                type="primary",
+                use_container_width=True,
+            )
+        wf_output = Path("artifacts/studio/walk_forward") / current_spec.slug
+        if run_walk_forward:
+            try:
+                wf_result = WalkForwardEvaluator(
+                    WalkForwardConfig(
+                        strategy_spec_path=selected_strategy,
+                        output_dir=wf_output,
+                        train_days=int(wf_train_days),
+                        test_days=int(wf_test_days),
+                        step_days=int(wf_step_days),
+                        purge_days=int(wf_purge_days),
+                        anchored_train=wf_anchored,
+                    )
+                ).run()
+            except Exception as exc:
+                st.error(f"Walk-forward 評估失敗：{exc}")
+            else:
+                st.success(f"已完成 {len(wf_result.folds)} 個 OOS folds。")
+                st.dataframe(display_table(wf_result.folds), hide_index=True)
+                st.json(wf_result.metrics)
+        wf_folds_path = wf_output / "folds.csv"
+        wf_equity_path = wf_output / "oos_equity_curve.csv"
+        if wf_folds_path.exists():
+            st.markdown("#### 最新 Walk-forward 結果")
+            latest_folds = pd.read_csv(wf_folds_path)
+            st.dataframe(display_table(latest_folds), hide_index=True)
+            if wf_equity_path.exists():
+                latest_wf_equity = pd.read_csv(wf_equity_path)
+                st.plotly_chart(
+                    px.line(
+                        latest_wf_equity,
+                        x="date",
+                        y="nav",
+                        title="Walk-forward 樣本外淨值曲線",
+                        labels={"date": "日期", "nav": "淨值"},
+                    )
+                )
+    else:
+        st.info("請先建立或還原一個啟用中的策略。")
 
     registry = StrategyRunRegistry()
     run_summary = registry.summary()

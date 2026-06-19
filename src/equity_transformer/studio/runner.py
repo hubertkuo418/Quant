@@ -79,8 +79,10 @@ class StrategyStudioRunner:
             annual_cash_rate=spec.execution.annual_cash_rate,
             annual_borrow_rate=spec.execution.annual_borrow_rate,
         )
+        market = self._market_for_evaluation(spec)
         equity, _, metrics = BacktestEngine(backtest_config).run(
-            target_weights=weights
+            market=market,
+            target_weights=weights,
         )
         save_strategy_spec(spec, run_dir / "strategy.yaml")
         manifest = self._manifest(spec, run_id, created, weights, equity, metrics)
@@ -110,6 +112,17 @@ class StrategyStudioRunner:
             score = score + component.weight * transformed
         signals[spec.signal.score_column] = score
         return signals
+
+    @staticmethod
+    def _market_for_evaluation(spec: StrategySpec) -> pd.DataFrame | None:
+        if spec.universe.end_date is None:
+            return None
+        market = pd.read_parquet(spec.market_path)
+        dates = pd.to_datetime(market["date"])
+        bounded = market.loc[dates <= pd.Timestamp(spec.universe.end_date)].copy()
+        if bounded.empty:
+            raise ValueError("No market rows exist on or before strategy end_date.")
+        return bounded
 
     @staticmethod
     def _validate_inputs(spec: StrategySpec) -> None:

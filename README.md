@@ -14,6 +14,10 @@ The active product roadmap is tracked in [docs/V1_1_PLAN.md](docs/V1_1_PLAN.md).
   constraints, grid/random search, and Pareto candidates
 - Chinese no-code strategy wizard with multi-signal, portfolio, risk, and
   execution controls, plus an advanced YAML mode
+- Reversible strategy lifecycle management with history, diff, archive,
+  soft-delete, and restore
+- Frozen-strategy rolling OOS evaluation with purge gaps and non-overlapping
+  Walk-forward folds
 - Universe: configurable liquid US equities (MVP list included)
 - Market data: Nasdaq daily OHLCV or validated local CSV imports
 - Storage: immutable per-symbol raw Parquet files and a clean panel dataset
@@ -54,6 +58,7 @@ python scripts/run_studio_strategy.py --spec strategies/factor_top10.yaml
 python scripts/optimize_studio_strategy.py --config configs/studio_optimizer.yaml
 python scripts/recommend_studio_strategies.py --profile configs/studio_profile.yaml
 python scripts/build_studio_report.py
+python scripts/run_studio_walk_forward.py --config configs/studio_walk_forward.yaml
 ```
 
 Every run is stored under `artifacts/studio/runs/<run_id>` with the exact

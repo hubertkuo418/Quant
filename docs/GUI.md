@@ -64,6 +64,21 @@ The wizard converts every submission back into the same validated
 slug-based YAML file; using the same name updates that strategy. Advanced YAML
 mode remains available for fields that are not yet exposed in the wizard.
 
+## Strategy Lifecycle
+
+The Strategy Studio can duplicate strategies, snapshot overwritten versions,
+compare nested StrategySpec fields, archive inactive strategies, soft-delete
+with exact-name confirmation, and restore archived or deleted files. Archived
+and deleted specifications are excluded from the active strategy selector.
+
+## Walk-Forward Evaluation
+
+The Chinese Walk-forward panel configures rolling or anchored training windows,
+non-overlapping test windows, and a purge gap. It executes each OOS fold through
+the normal Strategy Studio runner and displays the stitched OOS equity curve.
+The current mode evaluates a frozen strategy; it does not retrain a model or
+reselect factors inside every fold.
+
 The Strategy tab can apply a selected factor from
 `artifacts/factors/selected_factors.json` to `configs/strategy.yaml` as the
 strategy `score_column`.

@@ -118,6 +118,11 @@ CONFIG_CATALOG: dict[str, ConfigEntry] = {
         Path("configs/studio_profile.yaml"),
         "個人風險、報酬、回撤與換手率偏好。",
     ),
+    "studio_walk_forward": ConfigEntry(
+        "studio_walk_forward",
+        Path("configs/studio_walk_forward.yaml"),
+        "策略 Walk-forward 與滾動樣本外評估。",
+    ),
 }
 
 

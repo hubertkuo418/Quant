@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import json
+from dataclasses import replace
 from pathlib import Path
 
 import pandas as pd
@@ -127,3 +128,17 @@ def test_studio_runner_builds_weighted_component_score(tmp_path: Path) -> None:
     weights = pd.read_parquet(result.run_dir / "target_weights.parquet")
 
     assert set(weights["ticker"]) == {"AAA"}
+
+
+def test_studio_runner_respects_evaluation_end_date(tmp_path: Path) -> None:
+    spec = make_spec(tmp_path)
+    end_date = "2024-01-10"
+    bounded = replace(
+        spec,
+        universe=replace(spec.universe, end_date=end_date),
+    )
+
+    result = StrategyStudioRunner(tmp_path / "bounded_runs").run(bounded)
+    equity = pd.read_csv(result.run_dir / "backtest" / "equity_curve.csv")
+
+    assert pd.to_datetime(equity["date"]).max() <= pd.Timestamp(end_date)

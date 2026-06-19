@@ -53,6 +53,16 @@ WORKFLOW_STEPS: dict[str, WorkflowStep] = {
         command=("scripts/build_studio_report.py",),
         description="根據已登錄產物建立可重現的成果報告。",
     ),
+    "studio_walk_forward": WorkflowStep(
+        name="studio_walk_forward",
+        label="執行 Walk-forward 評估",
+        command=(
+            "scripts/run_studio_walk_forward.py",
+            "--config",
+            "configs/studio_walk_forward.yaml",
+        ),
+        description="以 purge gap 和互不重疊測試窗執行滾動樣本外評估。",
+    ),
     "csv_import": WorkflowStep(
         name="csv_import",
         label="匯入市場 CSV",

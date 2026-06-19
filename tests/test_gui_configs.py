@@ -34,6 +34,7 @@ def test_config_catalog_exposes_known_configs() -> None:
         "prediction_signals",
         "studio_optimizer",
         "studio_profile",
+        "studio_walk_forward",
     }.issubset(names)
 
 

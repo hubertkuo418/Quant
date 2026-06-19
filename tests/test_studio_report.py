@@ -51,6 +51,30 @@ def test_build_studio_report_from_registered_artifacts(tmp_path: Path) -> None:
             "rationale": ["balanced profile"],
         }
     ).to_csv(recommendations, index=False)
+    walk_forward_folds = tmp_path / "folds.csv"
+    pd.DataFrame(
+        {
+            "fold": [1],
+            "train_start": ["2024-01-01"],
+            "train_end": ["2024-03-01"],
+            "test_start": ["2024-03-08"],
+            "test_end": ["2024-04-08"],
+            "total_return": [0.05],
+            "sharpe_ratio": [1.2],
+            "max_drawdown": [-0.04],
+        }
+    ).to_csv(walk_forward_folds, index=False)
+    walk_forward_metrics = tmp_path / "walk_forward_metrics.json"
+    walk_forward_metrics.write_text(
+        json.dumps(
+            {
+                "total_return": 0.05,
+                "sharpe_ratio": 1.2,
+                "max_drawdown": -0.04,
+            }
+        ),
+        encoding="utf-8",
+    )
 
     report = build_studio_report(
         tmp_path / "report.md",
@@ -58,8 +82,12 @@ def test_build_studio_report_from_registered_artifacts(tmp_path: Path) -> None:
         core_comparison_path=comparison,
         optimization_path=optimization,
         recommendations_path=recommendations,
+        walk_forward_folds_path=walk_forward_folds,
+        walk_forward_metrics_path=walk_forward_metrics,
     )
 
     assert "Registered strategy runs: 1" in report
     assert "| run-1 |" in report
     assert "balanced profile" in report
+    assert "Frozen-Strategy Walk-Forward OOS" in report
+    assert "Folds: 1" in report
