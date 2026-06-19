@@ -11,6 +11,9 @@ import yfinance as yf
 
 
 class MarketDataProvider(ABC):
+    def adjustment_status(self, auto_adjust: bool) -> str:
+        return "unknown"
+
     @abstractmethod
     def download(
         self,
@@ -24,6 +27,9 @@ class MarketDataProvider(ABC):
 
 
 class YahooFinanceProvider(MarketDataProvider):
+    def adjustment_status(self, auto_adjust: bool) -> str:
+        return "provider_adjusted_ohlcv" if auto_adjust else "provider_adjusted_close"
+
     def download(
         self,
         ticker: str,
@@ -49,6 +55,9 @@ class NasdaqProvider(MarketDataProvider):
     endpoint = "https://api.nasdaq.com/api/quote/{ticker}/historical"
     symbol_aliases = {"BRK-B": "BRK.B"}
     etf_tickers = {"SPY"}
+
+    def adjustment_status(self, auto_adjust: bool) -> str:
+        return "unadjusted_close_proxy"
 
     def download(
         self,

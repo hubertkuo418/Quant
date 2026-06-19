@@ -12,6 +12,8 @@ import yaml
 class UniverseConfig:
     name: str
     tickers: tuple[str, ...]
+    membership_path: Path | None = None
+    always_include_tickers: tuple[str, ...] = ()
 
 
 @dataclass(frozen=True)
@@ -28,6 +30,7 @@ class DataConfig:
     metadata_dir: Path
     universe: UniverseConfig
     minimum_success_rate: float = 1.0
+    require_adjusted_prices: bool = False
 
     @property
     def resolved_end_date(self) -> str:
@@ -40,9 +43,16 @@ def load_data_config(path: str | Path) -> DataConfig:
         payload: dict[str, Any] = yaml.safe_load(stream)
 
     universe = payload["universe"]
-    tickers = tuple(dict.fromkeys(ticker.upper() for ticker in universe["tickers"]))
-    if not tickers:
-        raise ValueError("Universe must contain at least one ticker.")
+    tickers = tuple(
+        dict.fromkeys(ticker.upper() for ticker in universe.get("tickers", []))
+    )
+    membership_path = (
+        Path(universe["membership_path"])
+        if universe.get("membership_path")
+        else None
+    )
+    if not tickers and membership_path is None:
+        raise ValueError("Universe must contain tickers or a membership_path.")
 
     minimum_success_rate = float(payload.get("minimum_success_rate", 1.0))
     if not 0 < minimum_success_rate <= 1:
@@ -59,6 +69,19 @@ def load_data_config(path: str | Path) -> DataConfig:
         raw_dir=Path(payload["raw_dir"]),
         processed_path=Path(payload["processed_path"]),
         metadata_dir=Path(payload["metadata_dir"]),
-        universe=UniverseConfig(name=universe["name"], tickers=tickers),
+        universe=UniverseConfig(
+            name=universe["name"],
+            tickers=tickers,
+            membership_path=membership_path,
+            always_include_tickers=tuple(
+                dict.fromkeys(
+                    ticker.upper()
+                    for ticker in universe.get("always_include_tickers", [])
+                )
+            ),
+        ),
         minimum_success_rate=minimum_success_rate,
+        require_adjusted_prices=bool(
+            payload.get("require_adjusted_prices", False)
+        ),
     )

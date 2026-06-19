@@ -13,7 +13,10 @@ The importer accepts either:
 Required fields are `date`, `open`, `high`, `low`, `close`, and `volume`.
 Headers are case-insensitive. `Adj Close`, `adjusted_close`, `symbol`,
 `datetime`, and `timestamp` are recognized aliases. If adjusted close is not
-provided, the importer uses close.
+provided, the importer uses close and records that fallback in the manifest.
+Set `price_adjustment_status` to the source's documented status. Enabling
+`require_adjusted_prices` rejects unknown or unadjusted sources; a file that
+claims adjusted prices but omits `adj_close` is also rejected.
 
 For a single-symbol file without a ticker column, set `default_ticker` in
 `configs/csv_import.yaml`.
@@ -44,4 +47,5 @@ import fails on missing values, invalid prices, fractional volume, duplicate
 The manifest records the exact source path, byte size, SHA-256 hash, row count,
 ticker list, and imported date range. It also marks the dataset as
 `synthetic: false`; this describes provenance, not a claim about the vendor or
-license. Keep source files private when their license prohibits redistribution.
+license. The price-adjustment status and close-proxy fallback are recorded too.
+Keep source files private when their license prohibits redistribution.

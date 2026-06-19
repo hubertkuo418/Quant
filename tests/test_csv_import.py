@@ -54,6 +54,7 @@ def test_imports_directory_files_and_records_hashes(tmp_path: Path) -> None:
     assert config.output_path.exists()
     manifest = json.loads(config.metadata_path.read_text(encoding="utf-8"))
     assert manifest["synthetic"] is False
+    assert manifest["price_adjustment_status"] == "unknown"
     assert len(manifest["sources"]) == 2
     assert all(len(item["sha256"]) == 64 for item in manifest["sources"])
 
@@ -88,3 +89,27 @@ def test_import_rejects_invalid_numeric_values(tmp_path: Path) -> None:
 
     with pytest.raises(ValueError, match="Invalid required values"):
         MarketCsvImporter(make_config(tmp_path, source)).run()
+
+
+def test_csv_import_adjustment_guard_rejects_unknown_status(tmp_path: Path) -> None:
+    source = tmp_path / "market.csv"
+    write_prices(source, include_symbol=True)
+    config = make_config(tmp_path, source, require_adjusted_prices=True)
+
+    with pytest.raises(ValueError, match="requires adjusted prices"):
+        MarketCsvImporter(config)
+
+
+def test_csv_import_rejects_false_adjusted_close_claim(tmp_path: Path) -> None:
+    source = tmp_path / "market.csv"
+    write_prices(source, include_symbol=True)
+    frame = pd.read_csv(source).drop(columns="Adj Close")
+    frame.to_csv(source, index=False)
+    config = make_config(
+        tmp_path,
+        source,
+        price_adjustment_status="provider_adjusted_close",
+    )
+
+    with pytest.raises(ValueError, match="no adj_close"):
+        MarketCsvImporter(config).run()

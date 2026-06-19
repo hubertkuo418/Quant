@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import json
 from dataclasses import replace
 from pathlib import Path
 
@@ -194,3 +195,51 @@ def test_nasdaq_provider_maps_share_class_and_etf_asset_class(
     assert "assetclass=stocks" in urls[0]
     assert "/SPY/historical" in urls[1]
     assert "assetclass=etf" in urls[1]
+
+
+def test_pipeline_rejects_unadjusted_provider_when_required(tmp_path: Path) -> None:
+    config = replace(make_config(tmp_path), require_adjusted_prices=True)
+
+    with pytest.raises(ValueError, match="requires corporate-action-adjusted"):
+        MarketDataPipeline(config, NasdaqProvider())
+
+
+def test_pipeline_applies_point_in_time_universe_and_records_policy(
+    tmp_path: Path,
+) -> None:
+    membership_path = tmp_path / "membership.csv"
+    pd.DataFrame(
+        [
+            {
+                "ticker": "AAA",
+                "start_date": "2024-01-01",
+                "end_date": "2024-01-02",
+            },
+            {
+                "ticker": "BBB",
+                "start_date": "2024-01-03",
+                "end_date": "",
+            },
+        ]
+    ).to_csv(membership_path, index=False)
+    config = replace(
+        make_config(tmp_path),
+        universe=UniverseConfig(
+            name="historical-test",
+            tickers=(),
+            membership_path=membership_path,
+            always_include_tickers=("SPY",),
+        ),
+    )
+
+    panel = MarketDataPipeline(config, FakeProvider()).run()
+
+    assert panel.groupby("ticker").size().to_dict() == {
+        "AAA": 1,
+        "BBB": 1,
+        "SPY": 2,
+    }
+    manifest_path = next(config.metadata_dir.glob("market_*.json"))
+    manifest = json.loads(manifest_path.read_text(encoding="utf-8"))
+    assert manifest["universe_membership_policy"] == "point_in_time_intervals"
+    assert manifest["price_adjustment_status"] == "unknown"

@@ -14,6 +14,22 @@ MARKET_COLUMNS = [
     "volume",
 ]
 
+PRICE_ADJUSTMENT_STATUSES = {
+    "provider_adjusted_ohlcv",
+    "provider_adjusted_close",
+    "unadjusted_close_proxy",
+    "unknown",
+}
+ADJUSTED_PRICE_STATUSES = {
+    "provider_adjusted_ohlcv",
+    "provider_adjusted_close",
+}
+
+
+def validate_price_adjustment_status(status: str) -> None:
+    if status not in PRICE_ADJUSTMENT_STATUSES:
+        raise ValueError(f"Unknown price adjustment status: {status}")
+
 
 def validate_market_frame(frame: pd.DataFrame) -> None:
     missing = set(MARKET_COLUMNS).difference(frame.columns)

@@ -3,6 +3,9 @@ start_date: "2024-12-18"
 end_date: null
 interval: "1d"
 auto_adjust: false
+# Set true for formal workflows once the selected provider reports adjusted
+# prices. Nasdaq is deliberately rejected when this guard is enabled.
+require_adjusted_prices: false
 minimum_success_rate: 1.0
 max_retries: 3
 retry_delay_seconds: 2.0
@@ -15,6 +18,10 @@ metadata_dir: "data/metadata"
 # research universe, not historical S&P 500 membership.
 universe:
   name: "us_liquid_mvp"
+  # Optional CSV columns: ticker,start_date,end_date (inclusive dates).
+  # membership_path: "data/reference/us_membership.csv"
+  always_include_tickers:
+    - SPY
   tickers:
     - AAPL
     - MSFT

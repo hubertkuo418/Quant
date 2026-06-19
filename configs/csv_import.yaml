@@ -1,6 +1,8 @@
 # Put one long-form CSV here, or one <TICKER>.csv file per symbol in a directory.
 input_path: data/import/market_csv
 output_path: data/processed/market_panel.parquet
+price_adjustment_status: unknown
+require_adjusted_prices: false
 metadata_path: data/metadata/csv_import_manifest.json
 start_date: 2015-01-01
 end_date:

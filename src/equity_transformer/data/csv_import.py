@@ -10,7 +10,12 @@ from typing import Any
 import pandas as pd
 import yaml
 
-from equity_transformer.data.validation import MARKET_COLUMNS, validate_market_frame
+from equity_transformer.data.validation import (
+    ADJUSTED_PRICE_STATUSES,
+    MARKET_COLUMNS,
+    validate_market_frame,
+    validate_price_adjustment_status,
+)
 
 
 @dataclass(frozen=True)
@@ -21,6 +26,8 @@ class MarketCsvImportConfig:
     start_date: str | None = None
     end_date: str | None = None
     default_ticker: str | None = None
+    price_adjustment_status: str = "unknown"
+    require_adjusted_prices: bool = False
 
 
 def load_market_csv_import_config(path: str | Path) -> MarketCsvImportConfig:
@@ -38,6 +45,12 @@ def load_market_csv_import_config(path: str | Path) -> MarketCsvImportConfig:
             if payload.get("default_ticker")
             else None
         ),
+        price_adjustment_status=str(
+            payload.get("price_adjustment_status", "unknown")
+        ),
+        require_adjusted_prices=bool(
+            payload.get("require_adjusted_prices", False)
+        ),
     )
 
 
@@ -53,10 +66,27 @@ class MarketCsvImporter:
 
     def __init__(self, config: MarketCsvImportConfig) -> None:
         self.config = config
+        self._used_close_proxy = False
+        validate_price_adjustment_status(config.price_adjustment_status)
+        if (
+            config.require_adjusted_prices
+            and config.price_adjustment_status not in ADJUSTED_PRICE_STATUSES
+        ):
+            raise ValueError(
+                "CSV workflow requires adjusted prices, but price adjustment "
+                f"status is {config.price_adjustment_status}."
+            )
 
     def run(self) -> pd.DataFrame:
         source_files = self._source_files()
         frames = [self._read_source(path) for path in source_files]
+        if (
+            self._used_close_proxy
+            and self.config.price_adjustment_status in ADJUSTED_PRICE_STATUSES
+        ):
+            raise ValueError(
+                "CSV declares adjusted prices but has no adj_close column."
+            )
         panel = pd.concat(frames, ignore_index=True)
         panel = self._filter_dates(panel)
         panel = panel.sort_values(["date", "ticker"]).reset_index(drop=True)
@@ -105,6 +135,7 @@ class MarketCsvImporter:
             native["ticker"] = ticker
         if "adj_close" not in native.columns and "close" in native.columns:
             native["adj_close"] = native["close"]
+            self._used_close_proxy = True
 
         missing = sorted(set(MARKET_COLUMNS).difference(native.columns))
         if missing:
@@ -152,6 +183,9 @@ class MarketCsvImporter:
             "run_utc": datetime.now(UTC).isoformat(),
             "source_type": "csv_import",
             "synthetic": False,
+            "price_adjustment_status": self.config.price_adjustment_status,
+            "require_adjusted_prices": self.config.require_adjusted_prices,
+            "used_close_as_adjusted_close": self._used_close_proxy,
             "config": config,
             "sources": [
                 {

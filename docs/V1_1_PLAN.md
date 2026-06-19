@@ -11,7 +11,7 @@ research and reproducibility contracts established in V1.
 | 4 | Cost, lag, and nearby-parameter OOS robustness report | Complete |
 | 5 | Chinese investor-needs questionnaire and constraint translation | Complete |
 | 6 | Interactive multi-objective comparison and evidence-aware ranking | Complete |
-| 7 | Corporate-action-adjusted data and historical-universe adapters | Next |
+| 7 | Corporate-action and historical-universe data contracts/adapters | Complete |
 
 ## Milestone 1 Acceptance
 
@@ -37,6 +37,7 @@ research and reproducibility contracts established in V1.
 
 ## Delivery Order
 
-The next implementation slice is a market-data adjustment and historical
-universe contract. Candidate recommendations now use per-candidate OOS and
-robustness evidence when strict evidence mode is enabled.
+V1.1 implementation is complete. The data layer can reject unadjusted sources
+and apply point-in-time membership intervals. The current Nasdaq panel remains
+unadjusted and static until trustworthy historical source files or a licensed
+provider are connected through these contracts.

@@ -30,3 +30,6 @@ artifacts/data_quality/summary.json
 An issue is a diagnostic flag, not an automatic deletion rule. Investigate
 corporate actions, trading halts, new listings, and vendor corrections before
 excluding data.
+
+For corporate-action provenance and historical membership filtering, see
+`docs/MARKET_DATA_CONTRACT.md`.

@@ -24,6 +24,7 @@ The active product roadmap is tracked in [docs/V1_1_PLAN.md](docs/V1_1_PLAN.md).
   optional strict OOS evidence gates
 - Universe: configurable liquid US equities (MVP list included)
 - Market data: Nasdaq daily OHLCV or validated local CSV imports
+- Enforceable price-adjustment status and point-in-time universe membership
 - Storage: immutable per-symbol raw Parquet files and a clean panel dataset
 - Schema: `(date, ticker, open, high, low, close, adj_close, volume)`
 - Reproducibility: YAML configuration, CLI entry point, metadata manifest

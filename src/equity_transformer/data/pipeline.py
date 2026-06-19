@@ -11,7 +11,17 @@ import pandas as pd
 
 from equity_transformer.data.config import DataConfig
 from equity_transformer.data.providers import MarketDataProvider
-from equity_transformer.data.validation import MARKET_COLUMNS, validate_market_frame
+from equity_transformer.data.universe import (
+    filter_market_to_membership,
+    load_universe_membership,
+    membership_tickers,
+)
+from equity_transformer.data.validation import (
+    ADJUSTED_PRICE_STATUSES,
+    MARKET_COLUMNS,
+    validate_market_frame,
+    validate_price_adjustment_status,
+)
 
 LOGGER = logging.getLogger(__name__)
 
@@ -20,6 +30,16 @@ class MarketDataPipeline:
     def __init__(self, config: DataConfig, provider: MarketDataProvider) -> None:
         self.config = config
         self.provider = provider
+        self.adjustment_status = provider.adjustment_status(config.auto_adjust)
+        validate_price_adjustment_status(self.adjustment_status)
+        if (
+            config.require_adjusted_prices
+            and self.adjustment_status not in ADJUSTED_PRICE_STATUSES
+        ):
+            raise ValueError(
+                "Configured workflow requires corporate-action-adjusted prices, "
+                f"but provider status is {self.adjustment_status}."
+            )
 
     def run(
         self,
@@ -27,7 +47,19 @@ class MarketDataPipeline:
         start: str | None = None,
         end: str | None = None,
     ) -> pd.DataFrame:
-        selected = tickers or self.config.universe.tickers
+        membership = self._load_membership()
+        configured = self.config.universe.tickers
+        if membership is not None:
+            configured = tuple(
+                dict.fromkeys(
+                    (*membership_tickers(membership), *configured)
+                )
+            )
+        selected = tickers or tuple(
+            dict.fromkeys(
+                (*configured, *self.config.universe.always_include_tickers)
+            )
+        )
         start_date = start or self.config.start_date
         end_date = end or self.config.resolved_end_date
         frames: list[pd.DataFrame] = []
@@ -67,10 +99,24 @@ class MarketDataPipeline:
             .sort_values(["date", "ticker"])
             .reset_index(drop=True)
         )
+        if membership is not None:
+            panel = filter_market_to_membership(
+                panel,
+                membership,
+                self.config.universe.always_include_tickers,
+            )
+            if panel.empty:
+                raise RuntimeError(
+                    "Point-in-time universe filtering removed all market rows."
+                )
         validate_market_frame(panel)
         panel.to_parquet(self.config.processed_path, index=False)
         self._write_manifest(selected, start_date, end_date, failures, panel)
         return panel
+
+    def _load_membership(self) -> pd.DataFrame | None:
+        path = self.config.universe.membership_path
+        return load_universe_membership(path) if path is not None else None
 
     def _download_with_retries(
         self, ticker: str, start_date: str, end_date: str
@@ -145,13 +191,24 @@ class MarketDataPipeline:
         config_payload["universe"]["tickers"] = list(
             config_payload["universe"]["tickers"]
         )
+        config_payload["universe"]["membership_path"] = (
+            str(self.config.universe.membership_path)
+            if self.config.universe.membership_path is not None
+            else None
+        )
+        config_payload["universe"]["always_include_tickers"] = list(
+            config_payload["universe"]["always_include_tickers"]
+        )
         manifest: dict[str, Any] = {
             "run_utc": run_time.isoformat(),
             "provider": self.config.provider,
-            "adjusted_close_policy": (
-                "close_used_as_adjusted_close"
-                if self.config.provider.lower() == "nasdaq"
-                else "provider_adjusted_close"
+            "adjusted_close_policy": self.adjustment_status,
+            "price_adjustment_status": self.adjustment_status,
+            "require_adjusted_prices": self.config.require_adjusted_prices,
+            "universe_membership_policy": (
+                "point_in_time_intervals"
+                if self.config.universe.membership_path is not None
+                else "static_ticker_list"
             ),
             "requested_tickers": list(tickers),
             "start_date": start,
