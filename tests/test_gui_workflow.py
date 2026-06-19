@@ -24,6 +24,7 @@ def test_list_workflow_steps_exposes_known_steps() -> None:
         "studio_report",
         "studio_walk_forward",
         "studio_robustness",
+        "studio_candidate_evidence",
         "data_quality",
         "features",
         "alphas",

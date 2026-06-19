@@ -10,8 +10,8 @@ research and reproducibility contracts established in V1.
 | 3 | Frozen-strategy walk-forward and rolling OOS orchestration | Complete |
 | 4 | Cost, lag, and nearby-parameter OOS robustness report | Complete |
 | 5 | Chinese investor-needs questionnaire and constraint translation | Complete |
-| 6 | Interactive multi-objective comparison and evidence-aware ranking | Next |
-| 7 | Corporate-action-adjusted data and historical-universe adapters | Planned |
+| 6 | Interactive multi-objective comparison and evidence-aware ranking | Complete |
+| 7 | Corporate-action-adjusted data and historical-universe adapters | Next |
 
 ## Milestone 1 Acceptance
 
@@ -37,7 +37,6 @@ research and reproducibility contracts established in V1.
 
 ## Delivery Order
 
-The next implementation slice is evidence-aware candidate enrichment and
-interactive multi-objective comparison. OOS and robustness gates already work
-when evidence columns are present; optimizer candidates still need per-candidate
-evidence generation before strict ranking can be the default.
+The next implementation slice is a market-data adjustment and historical
+universe contract. Candidate recommendations now use per-candidate OOS and
+robustness evidence when strict evidence mode is enabled.

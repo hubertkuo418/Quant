@@ -128,6 +128,11 @@ CONFIG_CATALOG: dict[str, ConfigEntry] = {
         Path("configs/studio_robustness.yaml"),
         "成本、延遲、Top-K 與再平衡頻率的 OOS 穩健性評估。",
     ),
+    "studio_candidate_evidence": ConfigEntry(
+        "studio_candidate_evidence",
+        Path("configs/studio_candidate_evidence.yaml"),
+        "逐一建立 Pareto 候選方案的 OOS 與穩健性證據。",
+    ),
 }
 
 

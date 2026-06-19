@@ -22,5 +22,6 @@ strict evidence mode is enabled, recommendation candidates missing either field
 are rejected. When it is disabled, the legacy common-period optimizer can still
 be ranked, but the result must not be described as OOS-qualified.
 
-The next platform step is to generate Walk-forward and robustness evidence for
-each Pareto candidate, allowing strict evidence mode to become the default.
+Walk-forward and robustness evidence is generated separately for
+each feasible Pareto candidate. Strict evidence mode reads the enriched
+candidate table described in `docs/CANDIDATE_EVIDENCE.md`.

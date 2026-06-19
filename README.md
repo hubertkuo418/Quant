@@ -64,6 +64,7 @@ python scripts/recommend_studio_strategies.py --profile configs/studio_profile.y
 python scripts/build_studio_report.py
 python scripts/run_studio_walk_forward.py --config configs/studio_walk_forward.yaml
 python scripts/run_studio_robustness.py --config configs/studio_robustness.yaml
+python scripts/build_candidate_evidence.py --config configs/studio_candidate_evidence.yaml
 ```
 
 Every run is stored under `artifacts/studio/runs/<run_id>` with the exact

@@ -73,6 +73,16 @@ WORKFLOW_STEPS: dict[str, WorkflowStep] = {
         ),
         description="統一評估成本、延遲、Top-K 與月度再平衡情境。",
     ),
+    "studio_candidate_evidence": WorkflowStep(
+        name="studio_candidate_evidence",
+        label="建立候選方案 OOS 證據",
+        command=(
+            "scripts/build_candidate_evidence.py",
+            "--config",
+            "configs/studio_candidate_evidence.yaml",
+        ),
+        description="逐一驗證可行的 Pareto 候選方案，不共用基準策略結果。",
+    ),
     "csv_import": WorkflowStep(
         name="csv_import",
         label="匯入市場 CSV",

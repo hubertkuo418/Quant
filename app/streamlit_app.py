@@ -37,6 +37,10 @@ from equity_transformer.gui.workflow import (
     list_workflow_steps,
     run_workflow_step,
 )
+from equity_transformer.studio.candidate_evidence import (
+    CandidateEvidenceEvaluator,
+    load_candidate_evidence_config,
+)
 from equity_transformer.studio.comparison import compare_strategy_runs
 from equity_transformer.studio.lifecycle import (
     StrategyLifecycleManager,
@@ -72,6 +76,14 @@ from equity_transformer.studio.walk_forward import (
 )
 
 DISPLAY_LABELS = {
+    "evidence_status": "證據狀態",
+    "oos_max_drawdown": "OOS 最大回撤",
+    "oos_observations": "OOS 觀測數",
+    "oos_sharpe": "OOS Sharpe",
+    "oos_total_return": "OOS 總報酬",
+    "robustness_pass_rate": "穩健性通過率",
+    "robustness_worst_drawdown": "穩健性最差回撤",
+    "robustness_worst_sharpe": "穩健性最差 Sharpe",
     "absolute_contribution": "絕對貢獻",
     "active_positions": "持倉數量",
     "adj_close": "調整收盤價",
@@ -1334,6 +1346,36 @@ with tabs[7]:
         "依設定的風險承受度、回撤、換手率與報酬限制篩選。排名僅代表歷史候選結果，"
         "不構成報酬保證。"
     )
+    evidence_path = Path(
+        "artifacts/studio/evidence/factor_search/evidenced_candidates.csv"
+    )
+    st.subheader("候選方案 OOS 證據")
+    st.caption(
+        "僅評估可行的 Pareto 候選方案；每個候選都使用自己的不可變策略規格，"
+        "分別執行 Walk-forward 與穩健性情境。"
+    )
+    if st.button("建立 Pareto 候選 OOS／穩健性證據", use_container_width=True):
+        try:
+            evidence_result = CandidateEvidenceEvaluator(
+                load_candidate_evidence_config(
+                    "configs/studio_candidate_evidence.yaml"
+                )
+            ).run()
+        except Exception as exc:
+            st.error(f"候選方案證據建立失敗：{exc}")
+        else:
+            st.success(f"已完成 {len(evidence_result.candidates)} 個候選方案。")
+            st.dataframe(
+                display_table(evidence_result.candidates),
+                hide_index=True,
+            )
+    if evidence_path.exists():
+        st.markdown("#### 最新候選證據")
+        st.dataframe(
+            display_table(pd.read_csv(evidence_path)),
+            hide_index=True,
+        )
+
     current_profile = load_recommendation_profile("configs/studio_profile.yaml")
     with st.expander("填寫中文投資需求問卷", expanded=True):
         with st.form("investor_needs_form"):
@@ -1453,7 +1495,14 @@ with tabs[7]:
     if st.button("建立個人需求推薦"):
         try:
             profile = load_recommendation_profile("configs/studio_profile.yaml")
-            candidates = pd.read_csv(optimization_path)
+            candidate_path = (
+                evidence_path if profile.require_oos_evidence else optimization_path
+            )
+            if not candidate_path.exists():
+                raise FileNotFoundError(
+                    "嚴格 OOS 模式需要先建立 Pareto 候選方案證據。"
+                )
+            candidates = pd.read_csv(candidate_path)
             recommendations = recommend_strategies(candidates, profile)
             save_recommendations(
                 recommendations,

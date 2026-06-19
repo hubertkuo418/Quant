@@ -90,8 +90,9 @@ The Chinese questionnaire translates risk tolerance, maximum drawdown,
 turnover preference, return floor, holding period, execution conservatism, and
 the desired number of recommendations into a versionable profile YAML. It also
 stores desired OOS Sharpe and robustness pass-rate gates. Strict evidence mode
-rejects candidates that do not provide those fields instead of silently treating
-missing evidence as a pass.
+uses candidate-specific evidence from the Pareto candidate evidence panel.
+It rejects candidates that do not provide those fields instead of silently
+treating missing evidence as a pass.
 
 The Strategy tab can apply a selected factor from
 `artifacts/factors/selected_factors.json` to `configs/strategy.yaml` as the
