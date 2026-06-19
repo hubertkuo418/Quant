@@ -3,4 +3,10 @@ risk_tolerance: balanced
 max_drawdown: 0.15
 max_average_turnover: 0.30
 min_annual_return: 0.0
+min_execution_robustness: 0.4
+min_oos_sharpe: 0.25
+min_robustness_pass_rate: 0.8
+require_oos_evidence: false
+holding_period: medium
+execution_conservatism: balanced
 top_n: 5

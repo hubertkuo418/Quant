@@ -22,11 +22,11 @@
 
 | recommendation_rank | run_id | recommendation_score | annual_return | sharpe_ratio | max_drawdown | average_turnover | rationale |
 | --- | --- | --- | --- | --- | --- | --- | --- |
-| 1.0000 | 20260618T210627596459Z_factor-top10_9bed54c7 | 0.8625 | 0.8078 | 2.6032 | -0.0678 | 0.1632 | balanced profile; Sharpe 2.60, drawdown -6.8%, turnover 16.3%, worst-lag Sharpe 1.76 |
-| 2.0000 | 20260618T210629717182Z_factor-top10_8860a7c0 | 0.8125 | 0.4062 | 2.0157 | -0.0748 | 0.1500 | balanced profile; Sharpe 2.02, drawdown -7.5%, turnover 15.0%, worst-lag Sharpe 1.83 |
-| 3.0000 | 20260618T210629470628Z_factor-top10_19e73424 | 0.6875 | 0.3640 | 1.8336 | -0.0822 | 0.1368 | balanced profile; Sharpe 1.83, drawdown -8.2%, turnover 13.7%, worst-lag Sharpe 1.83 |
-| 4.0000 | 20260618T210628523091Z_factor-top10_b6a56e95 | 0.5750 | 0.4015 | 1.7723 | -0.0715 | 0.2073 | balanced profile; Sharpe 1.77, drawdown -7.1%, turnover 20.7%, worst-lag Sharpe 0.74 |
-| 5.0000 | 20260618T210627921017Z_factor-top10_68477841 | 0.5500 | 0.4751 | 1.7562 | -0.0853 | 0.1763 | balanced profile; Sharpe 1.76, drawdown -8.5%, turnover 17.6%, worst-lag Sharpe 1.76 |
+| 1.0000 | 20260618T210627596459Z_factor-top10_9bed54c7 | 0.8458 | 0.8078 | 2.6032 | -0.0678 | 0.1632 | balanced 需求；Sharpe 2.60，回撤 -6.8%，換手率 16.3%，最差延遲 Sharpe 1.76 |
+| 2.0000 | 20260618T210629717182Z_factor-top10_8860a7c0 | 0.7875 | 0.4062 | 2.0157 | -0.0748 | 0.1500 | balanced 需求；Sharpe 2.02，回撤 -7.5%，換手率 15.0%，最差延遲 Sharpe 1.83 |
+| 3.0000 | 20260618T210629470628Z_factor-top10_19e73424 | 0.6875 | 0.3640 | 1.8336 | -0.0822 | 0.1368 | balanced 需求；Sharpe 1.83，回撤 -8.2%，換手率 13.7%，最差延遲 Sharpe 1.83 |
+| 4.0000 | 20260618T210627921017Z_factor-top10_68477841 | 0.5458 | 0.4751 | 1.7562 | -0.0853 | 0.1763 | balanced 需求；Sharpe 1.76，回撤 -8.5%，換手率 17.6%，最差延遲 Sharpe 1.76 |
+| 5.0000 | 20260618T210629967640Z_factor-top10_d6e4ceed | 0.4042 | 0.1965 | 1.1128 | -0.0859 | 0.0500 | balanced 需求；Sharpe 1.11，回撤 -8.6%，換手率 5.0%，最差延遲 Sharpe 0.56 |
 
 ## Frozen-Strategy Walk-Forward OOS
 

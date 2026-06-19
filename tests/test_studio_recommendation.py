@@ -51,7 +51,7 @@ def test_balanced_profile_prefers_stable_candidate_family() -> None:
 
     assert recommendations["run_id"].str.startswith("top-10").all()
     assert recommendations["recommendation_rank"].tolist() == [1, 2]
-    assert recommendations["rationale"].str.contains("worst-lag Sharpe").all()
+    assert recommendations["rationale"].str.contains("最差延遲 Sharpe").all()
 
 
 def test_profile_reports_when_constraints_remove_every_candidate() -> None:

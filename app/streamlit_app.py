@@ -46,9 +46,14 @@ from equity_transformer.studio.optimizer import (
     StrategyOptimizer,
     load_optimization_config,
 )
+from equity_transformer.studio.questionnaire import (
+    InvestorNeeds,
+    profile_from_investor_needs,
+)
 from equity_transformer.studio.recommendation import (
     load_recommendation_profile,
     recommend_strategies,
+    save_recommendation_profile,
     save_recommendations,
 )
 from equity_transformer.studio.registry import StrategyRunRegistry
@@ -1329,6 +1334,122 @@ with tabs[7]:
         "依設定的風險承受度、回撤、換手率與報酬限制篩選。排名僅代表歷史候選結果，"
         "不構成報酬保證。"
     )
+    current_profile = load_recommendation_profile("configs/studio_profile.yaml")
+    with st.expander("填寫中文投資需求問卷", expanded=True):
+        with st.form("investor_needs_form"):
+            needs_name = st.text_input("需求設定名稱", value=current_profile.name)
+            needs_1, needs_2, needs_3 = st.columns(3)
+            risk_options = ["conservative", "balanced", "aggressive"]
+            needs_risk = needs_1.selectbox(
+                "風險承受度",
+                options=risk_options,
+                index=risk_options.index(current_profile.risk_tolerance),
+                format_func=lambda value: {
+                    "conservative": "保守",
+                    "balanced": "平衡",
+                    "aggressive": "積極",
+                }[value],
+            )
+            needs_drawdown = needs_2.number_input(
+                "最大可接受回撤（%）",
+                min_value=1.0,
+                max_value=80.0,
+                value=(current_profile.max_drawdown or 0.15) * 100,
+                step=1.0,
+            )
+            needs_min_return = needs_3.number_input(
+                "最低期望年化報酬（%）",
+                min_value=-50.0,
+                max_value=100.0,
+                value=(current_profile.min_annual_return or 0.0) * 100,
+                step=1.0,
+            )
+            preference_1, preference_2, preference_3 = st.columns(3)
+            turnover_options = ["low", "medium", "flexible"]
+            current_turnover = current_profile.max_average_turnover or 0.30
+            turnover_default = (
+                "low"
+                if current_turnover <= 0.15
+                else "medium"
+                if current_turnover <= 0.30
+                else "flexible"
+            )
+            needs_turnover = preference_1.selectbox(
+                "換手率偏好",
+                options=turnover_options,
+                index=turnover_options.index(turnover_default),
+                format_func=lambda value: {
+                    "low": "偏低",
+                    "medium": "中等",
+                    "flexible": "彈性",
+                }[value],
+            )
+            holding_options = ["short", "medium", "long"]
+            needs_holding = preference_2.selectbox(
+                "預期持有期間",
+                options=holding_options,
+                index=holding_options.index(current_profile.holding_period),
+                format_func=lambda value: {
+                    "short": "短期",
+                    "medium": "中期",
+                    "long": "長期",
+                }[value],
+            )
+            execution_options = ["strict", "balanced", "flexible"]
+            needs_execution = preference_3.selectbox(
+                "執行穩健性要求",
+                options=execution_options,
+                index=execution_options.index(
+                    current_profile.execution_conservatism
+                ),
+                format_func=lambda value: {
+                    "strict": "嚴格",
+                    "balanced": "平衡",
+                    "flexible": "彈性",
+                }[value],
+            )
+            evidence_1, evidence_2 = st.columns(2)
+            needs_require_evidence = evidence_1.checkbox(
+                "候選方案必須具備 OOS 與穩健性證據",
+                value=current_profile.require_oos_evidence,
+                help="缺少 oos_sharpe 或 robustness_pass_rate 時將拒絕推薦。",
+            )
+            needs_top_n = evidence_2.number_input(
+                "推薦方案數量",
+                min_value=1,
+                max_value=20,
+                value=current_profile.top_n,
+                step=1,
+            )
+            save_needs = st.form_submit_button(
+                "儲存需求設定",
+                type="primary",
+                use_container_width=True,
+            )
+        if save_needs:
+            try:
+                generated_profile = profile_from_investor_needs(
+                    InvestorNeeds(
+                        name=needs_name,
+                        risk_tolerance=needs_risk,
+                        max_drawdown=needs_drawdown / 100,
+                        turnover_preference=needs_turnover,
+                        min_annual_return=needs_min_return / 100,
+                        holding_period=needs_holding,
+                        execution_conservatism=needs_execution,
+                        require_oos_evidence=needs_require_evidence,
+                        top_n=int(needs_top_n),
+                    )
+                )
+                save_recommendation_profile(
+                    generated_profile,
+                    "configs/studio_profile.yaml",
+                )
+            except Exception as exc:
+                st.error(f"需求設定儲存失敗：{exc}")
+            else:
+                st.success("需求設定已儲存並轉換為推薦限制條件。")
+                st.json(generated_profile.__dict__)
     if st.button("建立個人需求推薦"):
         try:
             profile = load_recommendation_profile("configs/studio_profile.yaml")

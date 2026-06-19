@@ -40,6 +40,12 @@ class RecommendationProfile:
     max_drawdown: float | None = None
     max_average_turnover: float | None = None
     min_annual_return: float | None = None
+    min_execution_robustness: float | None = None
+    min_oos_sharpe: float | None = None
+    min_robustness_pass_rate: float | None = None
+    require_oos_evidence: bool = False
+    holding_period: str = "medium"
+    execution_conservatism: str = "balanced"
     top_n: int = 5
 
 
@@ -52,6 +58,18 @@ def load_recommendation_profile(path: str | Path) -> RecommendationProfile:
         max_drawdown=_optional_float(payload.get("max_drawdown")),
         max_average_turnover=_optional_float(payload.get("max_average_turnover")),
         min_annual_return=_optional_float(payload.get("min_annual_return")),
+        min_execution_robustness=_optional_float(
+            payload.get("min_execution_robustness")
+        ),
+        min_oos_sharpe=_optional_float(payload.get("min_oos_sharpe")),
+        min_robustness_pass_rate=_optional_float(
+            payload.get("min_robustness_pass_rate")
+        ),
+        require_oos_evidence=bool(payload.get("require_oos_evidence", False)),
+        holding_period=str(payload.get("holding_period", "medium")),
+        execution_conservatism=str(
+            payload.get("execution_conservatism", "balanced")
+        ),
         top_n=int(payload.get("top_n", 5)),
     )
     _validate_profile(profile)
@@ -83,6 +101,7 @@ def recommend_strategies(
         frame = frame[frame["average_turnover"] <= profile.max_average_turnover]
     if profile.min_annual_return is not None:
         frame = frame[frame["annual_return"] >= profile.min_annual_return]
+    frame = _apply_oos_evidence_gates(frame, profile)
     if frame.empty:
         raise ValueError("No strategy candidates satisfy the user profile constraints.")
 
@@ -97,6 +116,12 @@ def recommend_strategies(
         frame["worst_case_sharpe"].rank(pct=True)
         + (1 / (1 + frame["lag_sharpe_std"])).rank(pct=True)
     ) / 2
+    if profile.min_execution_robustness is not None:
+        frame = frame[
+            frame["execution_robustness"] >= profile.min_execution_robustness
+        ]
+    if frame.empty:
+        raise ValueError("No strategy candidates satisfy robustness constraints.")
 
     weights = PREFERENCE_WEIGHTS[profile.risk_tolerance]
     frame["recommendation_score"] = (
@@ -113,9 +138,9 @@ def recommend_strategies(
     frame["profile"] = profile.name
     frame["rationale"] = frame.apply(
         lambda row: (
-            f"{profile.risk_tolerance} profile; Sharpe {row['sharpe_ratio']:.2f}, "
-            f"drawdown {row['max_drawdown']:.1%}, turnover "
-            f"{row['average_turnover']:.1%}, worst-lag Sharpe "
+            f"{profile.risk_tolerance} 需求；Sharpe {row['sharpe_ratio']:.2f}，"
+            f"回撤 {row['max_drawdown']:.1%}，換手率 "
+            f"{row['average_turnover']:.1%}，最差延遲 Sharpe "
             f"{row['worst_case_sharpe']:.2f}"
         ),
         axis=1,
@@ -133,6 +158,19 @@ def save_recommendations(
     recommendations.to_csv(output / "recommendations.csv", index=False)
     (output / "profile.json").write_text(
         json.dumps(profile.__dict__, indent=2), encoding="utf-8"
+    )
+
+
+def save_recommendation_profile(
+    profile: RecommendationProfile,
+    path: str | Path,
+) -> None:
+    _validate_profile(profile)
+    output = Path(path)
+    output.parent.mkdir(parents=True, exist_ok=True)
+    output.write_text(
+        yaml.safe_dump(profile.__dict__, sort_keys=False),
+        encoding="utf-8",
     )
 
 
@@ -166,3 +204,30 @@ def _validate_profile(profile: RecommendationProfile) -> None:
         raise ValueError("max_average_turnover must be in [0, 1].")
     if profile.top_n <= 0:
         raise ValueError("top_n must be positive.")
+    for name in (
+        "min_execution_robustness",
+        "min_robustness_pass_rate",
+    ):
+        value = getattr(profile, name)
+        if value is not None and not 0 <= value <= 1:
+            raise ValueError(f"{name} must be in [0, 1].")
+
+
+def _apply_oos_evidence_gates(
+    frame: pd.DataFrame,
+    profile: RecommendationProfile,
+) -> pd.DataFrame:
+    requirements = {
+        "oos_sharpe": profile.min_oos_sharpe,
+        "robustness_pass_rate": profile.min_robustness_pass_rate,
+    }
+    result = frame
+    for column, minimum in requirements.items():
+        if minimum is None:
+            continue
+        if column not in result.columns:
+            if profile.require_oos_evidence:
+                raise ValueError(f"Recommendation candidates missing {column}.")
+            continue
+        result = result[result[column] >= minimum]
+    return result

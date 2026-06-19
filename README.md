@@ -20,6 +20,8 @@ The active product roadmap is tracked in [docs/V1_1_PLAN.md](docs/V1_1_PLAN.md).
   Walk-forward folds
 - Unified same-calendar OOS robustness checks for costs, lag, Top-K, and
   rebalance frequency
+- Chinese investor-needs questionnaire with reproducible constraints and
+  optional strict OOS evidence gates
 - Universe: configurable liquid US equities (MVP list included)
 - Market data: Nasdaq daily OHLCV or validated local CSV imports
 - Storage: immutable per-symbol raw Parquet files and a clean panel dataset

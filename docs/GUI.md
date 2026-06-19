@@ -84,6 +84,15 @@ double-cost, extra-lag, nearby Top-K, and monthly-rebalance scenarios. It shows
 aggregate and worst-fold Sharpe, positive-fold rate, drawdown, and whether each
 scenario passes configured constraints.
 
+## Investor-Needs Questionnaire
+
+The Chinese questionnaire translates risk tolerance, maximum drawdown,
+turnover preference, return floor, holding period, execution conservatism, and
+the desired number of recommendations into a versionable profile YAML. It also
+stores desired OOS Sharpe and robustness pass-rate gates. Strict evidence mode
+rejects candidates that do not provide those fields instead of silently treating
+missing evidence as a pass.
+
 The Strategy tab can apply a selected factor from
 `artifacts/factors/selected_factors.json` to `configs/strategy.yaml` as the
 strategy `score_column`.
