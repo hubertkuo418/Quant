@@ -1,0 +1,11 @@
+database_path: "data/catalog.duckdb"
+manifest_path: "data/metadata/catalog_manifest.json"
+
+tables:
+  market_panel: "data/processed/market_panel.parquet"
+  feature_panel: "data/processed/feature_panel.parquet"
+  alpha_panel: "data/processed/alpha_panel.parquet"
+  factor_panel: "data/processed/factor_panel.parquet"
+  model_panel: "data/processed/model_panel.parquet"
+  target_weights: "artifacts/strategies/target_weights.parquet"
+  holdings: "artifacts/backtests/holdings.parquet"

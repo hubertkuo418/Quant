@@ -1,0 +1,17 @@
+dataset_config: "configs/smoke/dataset.yaml"
+artifacts_dir: "artifacts/smoke/recurrent"
+random_seed: 42
+model_type: "lstm"
+
+model:
+  hidden_dim: 16
+  num_layers: 1
+  dropout: 0.0
+
+training:
+  learning_rate: 0.001
+  weight_decay: 0.0001
+  epochs: 2
+  patience: 2
+  batch_size: 64
+  gradient_clip: 1.0

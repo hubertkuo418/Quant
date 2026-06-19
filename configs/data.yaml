@@ -1,0 +1,49 @@
+provider: nasdaq
+start_date: "2024-12-18"
+end_date: null
+interval: "1d"
+auto_adjust: false
+minimum_success_rate: 1.0
+max_retries: 3
+retry_delay_seconds: 2.0
+raw_dir: "data/raw/market"
+processed_path: "data/processed/market_panel.parquet"
+metadata_dir: "data/metadata"
+
+# Liquid US equities for a fast, diversified MVP. SPY is downloaded as a
+# benchmark and excluded by strategy configs. This is a present-day static
+# research universe, not historical S&P 500 membership.
+universe:
+  name: "us_liquid_mvp"
+  tickers:
+    - AAPL
+    - MSFT
+    - NVDA
+    - AMZN
+    - GOOGL
+    - META
+    - BRK-B
+    - JPM
+    - V
+    - MA
+    - XOM
+    - JNJ
+    - UNH
+    - PG
+    - HD
+    - COST
+    - ABBV
+    - KO
+    - PEP
+    - AVGO
+    - WMT
+    - BAC
+    - CRM
+    - AMD
+    - NFLX
+    - LIN
+    - DIS
+    - MCD
+    - TMO
+    - CSCO
+    - SPY

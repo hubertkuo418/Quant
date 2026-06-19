@@ -1,0 +1,10 @@
+ic_summary_path: "artifacts/factors/ic_summary.csv"
+coverage_path: "artifacts/factors/coverage.csv"
+output_csv_path: "artifacts/factors/selected_factors.csv"
+output_json_path: "artifacts/factors/selected_factors.json"
+
+min_coverage: 0.7
+min_periods: 20
+min_abs_rank_ic: 0.01
+min_positive_ic_rate: 0.5
+top_n: 25

@@ -1,0 +1,11 @@
+sources:
+  - name: factor_strategy
+    path: "artifacts/backtests/equity_curve.csv"
+  - name: transformer_strategy
+    path: "artifacts/smoke/model_backtest/equity_curve.csv"
+  - name: buy_and_hold_SPY
+    path: "artifacts/benchmarks/buy_and_hold_SPY/equity_curve.csv"
+output_path: "artifacts/smoke/comparison/common_period.csv"
+metadata_path: "artifacts/smoke/comparison/manifest.json"
+annualization_factor: 252
+risk_free_rate: 0.0

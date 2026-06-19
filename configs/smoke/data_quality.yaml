@@ -1,0 +1,6 @@
+market_path: data/processed/market_panel.parquet
+output_dir: artifacts/smoke/data_quality
+min_calendar_coverage: 0.95
+max_zero_volume_rate: 0.01
+max_stale_price_run: 5
+max_abs_daily_return: 0.50

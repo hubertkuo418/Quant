@@ -1,0 +1,11 @@
+feature_path: "data/processed/factor_panel.parquet"
+selected_factors_path: "artifacts/factors/selected_factors.csv"
+output_path: "artifacts/factors/factor_signals.parquet"
+metadata_path: "artifacts/factors/factor_signals.json"
+
+date_column: "date"
+ticker_column: "ticker"
+score_column: "factor_score"
+weight_column: "mean_rank_ic"
+passthrough_columns:
+  - "volatility_20d"

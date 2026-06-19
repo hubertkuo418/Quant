@@ -216,3 +216,13 @@ __marimo__/
 
 # Streamlit
 .streamlit/secrets.toml
+
+# Project data and generated research artifacts
+data/raw/
+data/processed/
+data/metadata/*.json
+data/metadata/**/*.json
+data/catalog.duckdb
+artifacts/
+checkpoints/
+*.parquet

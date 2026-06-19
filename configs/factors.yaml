@@ -1,0 +1,8 @@
+feature_path: "data/processed/factor_panel.parquet"
+output_dir: "artifacts/factors"
+target_horizon: 20
+quantiles: 5
+min_cross_section: 5
+start_date: null
+end_date: "2025-10-27"
+factor_columns: null

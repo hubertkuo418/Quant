@@ -1,0 +1,34 @@
+name: momentum-low-vol
+version: 1.0.0
+description: User-designed momentum and low-volatility composite strategy.
+market_path: data/processed/market_panel.parquet
+signal:
+  path: data/processed/factor_panel.parquet
+  score_column: studio_score
+  date_column: date
+  ticker_column: ticker
+  volatility_column: volatility_20d
+  components:
+    - column: return_20d
+      weight: 0.7
+      transform: cross_sectional_zscore
+    - column: volatility_20d
+      weight: -0.3
+      transform: cross_sectional_zscore
+universe:
+  excluded_tickers: [SPY]
+  start_date: "2026-02-24"
+portfolio:
+  strategy_type: long_only_top_k
+  top_k: 10
+  weighting: inverse_volatility
+  rebalance_frequency: W-FRI
+risk:
+  max_position_weight: 0.15
+  liquidity_window: 20
+execution:
+  initial_capital: 1000000
+  commission_bps: 5
+  slippage_bps: 5
+  execution_lag_days: 1
+benchmark_ticker: SPY

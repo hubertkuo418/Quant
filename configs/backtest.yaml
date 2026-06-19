@@ -1,0 +1,15 @@
+market_path: "data/processed/market_panel.parquet"
+weights_path: "artifacts/strategies/target_weights.parquet"
+output_dir: "artifacts/backtests"
+
+initial_capital: 1000000
+commission_bps: 5
+slippage_bps: 5
+annualization_factor: 252
+risk_free_rate: 0.0
+execution_lag_days: 0
+min_dollar_volume: null
+liquidity_window: 20
+benchmark_ticker: null
+annual_cash_rate: 0.0
+annual_borrow_rate: 0.0

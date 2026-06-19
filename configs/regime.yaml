@@ -1,0 +1,8 @@
+market_path: "data/processed/market_panel.parquet"
+equity_path: "artifacts/backtests/equity_curve.csv"
+output_dir: "artifacts/regimes"
+benchmark_ticker: "SPY"
+trend_window: 60
+volatility_window: 20
+threshold_window: 252
+annualization_factor: 252

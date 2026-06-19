@@ -1,0 +1,11 @@
+sources:
+  - name: factor_strategy
+    path: "artifacts/backtests/equity_curve.csv"
+  - name: model_strategy
+    path: "artifacts/model_backtests/equity_curve.csv"
+  - name: buy_and_hold_SPY
+    path: "artifacts/benchmarks/buy_and_hold_SPY/equity_curve.csv"
+output_path: "artifacts/comparisons/common_period.csv"
+metadata_path: "artifacts/comparisons/manifest.json"
+annualization_factor: 252
+risk_free_rate: 0.0

@@ -1,0 +1,3 @@
+market_path: "data/processed/market_panel.parquet"
+holdings_path: "artifacts/backtests/holdings.parquet"
+output_dir: "artifacts/attribution"

@@ -1,0 +1,18 @@
+signal_path: "artifacts/smoke/model_signals.parquet"
+output_path: "artifacts/smoke/model_strategy/target_weights.parquet"
+metadata_path: "artifacts/smoke/model_strategy/manifest.json"
+
+date_column: "date"
+ticker_column: "ticker"
+score_column: "model_score"
+strategy_type: "long_only_top_k"
+top_k: 3
+long_quantile: 0.2
+short_quantile: 0.2
+weighting: "equal"
+rebalance_frequency: "W-FRI"
+volatility_column: null
+sector_column: null
+max_sector_weight: null
+max_position_weight: 0.5
+excluded_tickers: [SPY]

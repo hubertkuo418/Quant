@@ -1,0 +1,20 @@
+dataset_config: "configs/dataset.yaml"
+artifacts_dir: "artifacts/transformer_v1"
+random_seed: 42
+target_horizon: null
+
+model:
+  d_model: 32
+  num_heads: 4
+  num_layers: 1
+  feedforward_dim: 64
+  dropout: 0.2
+
+training:
+  learning_rate: 0.0005
+  weight_decay: 0.0001
+  epochs: 4
+  patience: 2
+  batch_size: 256
+  gradient_clip: 1.0
+  correlation_loss_weight: 0.1

@@ -1,0 +1,25 @@
+base_spec_path: strategies/factor_top10.yaml
+output_dir: artifacts/studio/optimizations/factor_search
+method: grid
+max_trials: 12
+random_seed: 42
+require_common_period: true
+
+search_space:
+  portfolio.top_k: [5, 10, 15]
+  portfolio.weighting: [equal, inverse_volatility]
+  portfolio.rebalance_frequency: [W-FRI, M]
+  execution.execution_lag_days: [1, 2]
+
+objectives:
+  - metric: sharpe_ratio
+    direction: maximize
+  - metric: max_drawdown
+    direction: maximize
+  - metric: average_turnover
+    direction: minimize
+
+min_metrics:
+  max_drawdown: -0.25
+max_metrics:
+  average_turnover: 0.50

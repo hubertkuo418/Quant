@@ -1,0 +1,20 @@
+signal_path: "artifacts/factors/factor_signals.parquet"
+output_path: "artifacts/strategies/target_weights.parquet"
+metadata_path: "artifacts/strategies/manifest.json"
+
+date_column: "date"
+ticker_column: "ticker"
+score_column: "factor_score"
+strategy_type: "long_only_top_k"
+top_k: 10
+long_quantile: 0.2
+short_quantile: 0.2
+weighting: "equal"
+rebalance_frequency: "W-FRI"
+volatility_column: "volatility_20d"
+sector_column: null
+max_sector_weight: null
+max_position_weight: null
+excluded_tickers: [SPY]
+start_date: "2026-02-24"
+end_date: null

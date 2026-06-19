@@ -1,0 +1,4 @@
+feature_path: "data/processed/feature_panel.parquet"
+alpha_path: "data/processed/alpha_panel.parquet"
+output_path: "data/processed/factor_panel.parquet"
+metadata_path: "data/metadata/factor_panel_manifest.json"

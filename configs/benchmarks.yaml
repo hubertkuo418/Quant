@@ -1,0 +1,12 @@
+market_path: "data/processed/market_panel.parquet"
+output_dir: "artifacts/benchmarks"
+
+rebalance_frequency: "W-FRI"
+buy_and_hold_ticker: "SPY"
+momentum_window: 20
+momentum_top_k: 10
+initial_capital: 1000000
+commission_bps: 5
+slippage_bps: 5
+annualization_factor: 252
+risk_free_rate: 0.0

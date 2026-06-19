@@ -1,0 +1,39 @@
+name: factor-top10
+version: 1.0.0
+description: Train-selected multi-factor score, weekly top-10 portfolio.
+market_path: data\processed\market_panel.parquet
+signal:
+  path: artifacts\factors\factor_signals.parquet
+  score_column: factor_score
+  date_column: date
+  ticker_column: ticker
+  volatility_column: volatility_20d
+  sector_column: null
+universe:
+  excluded_tickers:
+  - SPY
+  start_date: '2026-02-24'
+  end_date: null
+portfolio:
+  strategy_type: long_only_top_k
+  top_k: 10
+  long_quantile: 0.2
+  short_quantile: 0.2
+  weighting: equal
+  rebalance_frequency: W-FRI
+risk:
+  max_position_weight: null
+  max_sector_weight: null
+  min_dollar_volume: null
+  liquidity_window: 20
+execution:
+  initial_capital: 1000000.0
+  commission_bps: 5.0
+  slippage_bps: 5.0
+  execution_lag_days: 1
+  annual_cash_rate: 0.0
+  annual_borrow_rate: 0.0
+benchmark_ticker: SPY
+annualization_factor: 252
+risk_free_rate: 0.0
+parent_run_id: null

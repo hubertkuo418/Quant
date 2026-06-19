@@ -1,0 +1,25 @@
+base_backtest_config: "configs/backtest.yaml"
+output_dir: "artifacts/sensitivity"
+
+scenarios:
+  - name: baseline
+    overrides: {}
+  - name: double_costs
+    overrides:
+      commission_bps: 10
+      slippage_bps: 10
+  - name: execution_lag_1d
+    overrides:
+      execution_lag_days: 1
+  - name: execution_lag_2d
+    overrides:
+      execution_lag_days: 2
+  - name: high_borrow_cost
+    overrides:
+      annual_borrow_rate: 0.05
+  - name: combined_stress
+    overrides:
+      commission_bps: 10
+      slippage_bps: 10
+      execution_lag_days: 1
+      annual_borrow_rate: 0.05
